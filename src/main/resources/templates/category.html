@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Categoría de Noticias</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="mb-4" th:text="${category}">Categoría</h1>
+        
+        <div class="row">
+            <div class="col-md-8">
+                <div class="list-group">
+                    <div th:each="article : ${articles}" class="list-group-item">
+                        <h3 th:text="${article.title}">Título del Artículo</h3>
+                        <p th:text="${article.content}">Contenido del artículo...</p>
+                        <small class="text-muted">
+                            <span th:text="${article.publishDate}">Fecha de publicación</span> | 
+                            Visitas: <span th:text="${article.viewCount}">0</span>
+                        </small>
+                    </div>
+                </div>
+                
+                <div th:if="${articles.empty}" class="alert alert-info mt-3">
+                    No hay artículos disponibles en esta categoría.
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Artículos más leídos</h5>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        <a th:each="topArticle : ${topArticles}" 
+                           th:href="@{'/article/' + ${topArticle.id}}"
+                           class="list-group-item list-group-item-action">
+                            <div th:text="${topArticle.title}">Título del artículo popular</div>
+                            <small class="text-muted">
+                                Visitas: <span th:text="${topArticle.viewCount}">0</span>
+                            </small>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

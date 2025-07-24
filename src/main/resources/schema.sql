@@ -1,0 +1,27 @@
+CREATE TABLE IF NOT EXISTS article (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    category VARCHAR(50) NOT NULL,
+    publish_date TIMESTAMP NOT NULL,
+    view_count INT DEFAULT 0,
+    source VARCHAR(255),
+    source_url VARCHAR(255),
+    image_url VARCHAR(255),
+    status VARCHAR(20) NOT NULL DEFAULT 'DRAFT'
+);
+
+CREATE TABLE IF NOT EXISTS users (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(100) NOT NULL,
+    role VARCHAR(20) NOT NULL,
+    active BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS visitor_stats (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    ip_address VARCHAR(50) NOT NULL,
+    page VARCHAR(255) NOT NULL,
+    visit_date TIMESTAMP NOT NULL
+);
