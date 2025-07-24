@@ -1,22 +1,25 @@
 package com.example.demo.service;
 
 import com.example.demo.model.User;
+import com.example.demo.model.Role;
 import com.example.demo.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 public class UserService implements UserDetailsService {
 
-    private final UserRepository userRepository;
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
-    public UserService(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
+    private PasswordEncoder passwordEncoder;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -70,5 +73,84 @@ public class UserService implements UserDetailsService {
         System.out.println("DEBUG: Created UserDetails successfully");
         System.out.println("DEBUG: Assigned authorities: " + userDetails.getAuthorities());
         return userDetails;
+    }
+
+    // User Management Methods
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+
+    public Optional<User> getUserById(Long id) {
+        return userRepository.findById(id);
+    }
+
+    public Optional<User> getUserByUsername(String username) {
+        return userRepository.findByUsername(username);
+    }
+
+    public User createUser(User user) {
+        // Encode password before saving
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        return userRepository.save(user);
+    }
+
+    public User updateUser(Long id, User userDetails) {
+        return userRepository.findById(id).map(user -> {
+            user.setEmail(userDetails.getEmail());
+            user.setFirstName(userDetails.getFirstName());
+            user.setLastName(userDetails.getLastName());
+            user.setRole(userDetails.getRole());
+            user.setActive(userDetails.isActive());
+            
+            // Only update password if it's provided
+            if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
+                user.setPassword(passwordEncoder.encode(userDetails.getPassword()));
+            }
+            
+            return userRepository.save(user);
+        }).orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    public void deleteUser(Long id) {
+        userRepository.findById(id).ifPresent(user -> {
+            user.setActive(false);
+            userRepository.save(user);
+        });
+    }
+
+    public boolean changePassword(Long id, String oldPassword, String newPassword) {
+        return userRepository.findById(id).map(user -> {
+            if (passwordEncoder.matches(oldPassword, user.getPassword())) {
+                user.setPassword(passwordEncoder.encode(newPassword));
+                userRepository.save(user);
+                return true;
+            }
+            return false;
+        }).orElse(false);
+    }
+
+    // Permission checking method
+    public boolean hasPermission(User user, String permission) {
+        if (!user.isActive()) {
+            return false;
+        }
+
+        switch (user.getRole()) {
+            case ROLE_ADMIN:
+                return true; // Admin has all permissions
+            case ROLE_PUBLISHER:
+                return permission.equals("PUBLISH_ARTICLE") || 
+                       permission.equals("VIEW_ARTICLE") ||
+                       permission.equals("REVIEW_ARTICLE");
+            case ROLE_REDACTOR:
+                return permission.equals("CREATE_ARTICLE") || 
+                       permission.equals("EDIT_ARTICLE") ||
+                       permission.equals("VIEW_ARTICLE") ||
+                       permission.equals("PUBLISH_OWN_ARTICLE");
+            case ROLE_SUBSCRIBER:
+                return permission.equals("VIEW_ARTICLE");
+            default:
+                return false;
+        }
     }
 }

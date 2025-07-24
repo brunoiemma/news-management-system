@@ -10,7 +10,12 @@ INSERT INTO article (title, content, category, publish_date, view_count, status)
 ('Toyota lanza coche eléctrico', 'La marca japonesa revoluciona el mercado...', 'automotor', CURRENT_TIMESTAMP(), 180, 'DRAFT'),
 ('BMW presenta moto del futuro', 'La nueva motocicleta eléctrica de BMW...', 'automotor', CURRENT_TIMESTAMP(), 160, 'DRAFT');
 
--- Insertar usuario admin (contraseña: admin)
-DELETE FROM users WHERE username = 'admin';
-INSERT INTO users (username, password, role, active) VALUES 
-('admin', '$2a$10$7hFLSnApv7CZ66QWpw5bluNiH38N2.qTpCTI7Zuc.A1vbG3EXVBCK', 'ROLE_ADMIN', true);
+-- Delete existing users
+DELETE FROM users;
+
+-- Insert default users with different roles (password: admin for all)
+INSERT INTO users (username, password, email, first_name, last_name, role, active) VALUES 
+('admin', '$2a$10$7hFLSnApv7CZ66QWpw5bluNiH38N2.qTpCTI7Zuc.A1vbG3EXVBCK', 'admin@example.com', 'Admin', 'User', 'ROLE_ADMIN', true),
+('publisher', '$2a$10$7hFLSnApv7CZ66QWpw5bluNiH38N2.qTpCTI7Zuc.A1vbG3EXVBCK', 'publisher@example.com', 'Publisher', 'User', 'ROLE_PUBLISHER', true),
+('redactor', '$2a$10$7hFLSnApv7CZ66QWpw5bluNiH38N2.qTpCTI7Zuc.A1vbG3EXVBCK', 'redactor@example.com', 'Redactor', 'User', 'ROLE_REDACTOR', true),
+('subscriber', '$2a$10$7hFLSnApv7CZ66QWpw5bluNiH38N2.qTpCTI7Zuc.A1vbG3EXVBCK', 'subscriber@example.com', 'Subscriber', 'User', 'ROLE_SUBSCRIBER', true);

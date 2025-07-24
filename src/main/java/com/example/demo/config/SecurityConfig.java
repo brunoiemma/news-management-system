@@ -37,7 +37,16 @@ public class SecurityConfig {
                 .requestMatchers(mvcMatcherBuilder.pattern("/images/**")).permitAll()
                 .requestMatchers(mvcMatcherBuilder.pattern("/generateHash")).permitAll()
                 .requestMatchers(new AntPathRequestMatcher("/h2-console/**")).permitAll()
-                .requestMatchers(mvcMatcherBuilder.pattern("/admin/**")).hasRole("ADMIN")
+                // Admin routes
+                .requestMatchers(mvcMatcherBuilder.pattern("/admin/users/**")).hasRole("ADMIN")
+                .requestMatchers(mvcMatcherBuilder.pattern("/admin/dashboard")).hasAnyRole("ADMIN", "PUBLISHER", "REDACTOR")
+                // Article management routes
+                .requestMatchers(mvcMatcherBuilder.pattern("/admin/articles/create")).hasAnyRole("ADMIN", "REDACTOR")
+                .requestMatchers(mvcMatcherBuilder.pattern("/admin/articles/edit/**")).hasAnyRole("ADMIN", "REDACTOR")
+                .requestMatchers(mvcMatcherBuilder.pattern("/admin/articles/delete/**")).hasRole("ADMIN")
+                .requestMatchers(mvcMatcherBuilder.pattern("/admin/articles")).hasAnyRole("ADMIN", "PUBLISHER", "REDACTOR")
+                // Public routes
+                .requestMatchers(mvcMatcherBuilder.pattern("/articles/**")).hasAnyRole("ADMIN", "PUBLISHER", "REDACTOR", "SUBSCRIBER")
                 .anyRequest().authenticated()
             )
             .formLogin((form) -> form
