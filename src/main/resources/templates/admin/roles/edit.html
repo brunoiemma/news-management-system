@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/dashboard}">
+<head>
+    <title>Edit Role</title>
+</head>
+<body>
+    <div layout:fragment="content">
+        <div class="container-fluid px-4">
+            <h1 class="mt-4">Edit Role</h1>
+            
+            <div class="alert alert-danger" th:if="${error}" th:text="${error}"></div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-edit me-1"></i>
+                    Role Details
+                </div>
+                <div class="card-body">
+                    <form th:action="@{/admin/roles/edit/{id}(id=${role.id})}" th:object="${role}" method="post">
+                        <input type="hidden" th:field="*{id}">
+                        
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Role Name</label>
+                            <input type="text" class="form-control" id="name" th:field="*{name}" required
+                                   pattern="ROLE_.*" title="Role name must start with 'ROLE_'">
+                            <small class="form-text text-muted">Role name must start with 'ROLE_' (e.g., ROLE_ADMIN)</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" th:field="*{description}" 
+                                    rows="3" required></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <a th:href="@{/admin/roles}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Update Role</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

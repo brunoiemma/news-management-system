@@ -2,6 +2,7 @@ package com.example.demo.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -13,9 +14,13 @@ import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 
-
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(
+    securedEnabled = true,
+    jsr250Enabled = true,
+    prePostEnabled = true
+)
 public class SecurityConfig {
 
     @Bean
@@ -29,6 +34,7 @@ public class SecurityConfig {
             .headers((headers) -> headers
                 .frameOptions((frame) -> frame.sameOrigin()))
             .authorizeHttpRequests((requests) -> requests
+                // Public routes
                 .requestMatchers(mvcMatcherBuilder.pattern("/")).permitAll()
                 .requestMatchers(mvcMatcherBuilder.pattern("/home")).permitAll()
                 .requestMatchers(mvcMatcherBuilder.pattern("/login")).permitAll()
@@ -37,16 +43,31 @@ public class SecurityConfig {
                 .requestMatchers(mvcMatcherBuilder.pattern("/images/**")).permitAll()
                 .requestMatchers(mvcMatcherBuilder.pattern("/generateHash")).permitAll()
                 .requestMatchers(new AntPathRequestMatcher("/h2-console/**")).permitAll()
-                // Admin routes
+                
+                // Admin routes - Role Management
+                .requestMatchers(mvcMatcherBuilder.pattern("/admin/roles/**")).hasRole("ADMIN")
                 .requestMatchers(mvcMatcherBuilder.pattern("/admin/users/**")).hasRole("ADMIN")
-                .requestMatchers(mvcMatcherBuilder.pattern("/admin/dashboard")).hasAnyRole("ADMIN", "PUBLISHER", "REDACTOR")
-                // Article management routes
-                .requestMatchers(mvcMatcherBuilder.pattern("/admin/articles/create")).hasAnyRole("ADMIN", "REDACTOR")
-                .requestMatchers(mvcMatcherBuilder.pattern("/admin/articles/edit/**")).hasAnyRole("ADMIN", "REDACTOR")
-                .requestMatchers(mvcMatcherBuilder.pattern("/admin/articles/delete/**")).hasRole("ADMIN")
-                .requestMatchers(mvcMatcherBuilder.pattern("/admin/articles")).hasAnyRole("ADMIN", "PUBLISHER", "REDACTOR")
-                // Public routes
-                .requestMatchers(mvcMatcherBuilder.pattern("/articles/**")).hasAnyRole("ADMIN", "PUBLISHER", "REDACTOR", "SUBSCRIBER")
+                
+                // Admin Dashboard
+                .requestMatchers(mvcMatcherBuilder.pattern("/admin/dashboard"))
+                    .hasAnyAuthority("ROLE_ADMIN", "ROLE_PUBLISHER", "ROLE_REDACTOR")
+                
+                // Article Management
+                .requestMatchers(mvcMatcherBuilder.pattern("/admin/articles/create"))
+                    .hasAnyAuthority("PERMISSION_CREATE_ARTICLE")
+                .requestMatchers(mvcMatcherBuilder.pattern("/admin/articles/edit/**"))
+                    .hasAnyAuthority("PERMISSION_EDIT_ARTICLE")
+                .requestMatchers(mvcMatcherBuilder.pattern("/admin/articles/delete/**"))
+                    .hasAnyAuthority("PERMISSION_DELETE_ARTICLE")
+                .requestMatchers(mvcMatcherBuilder.pattern("/admin/articles/publish/**"))
+                    .hasAnyAuthority("PERMISSION_PUBLISH_ARTICLE")
+                .requestMatchers(mvcMatcherBuilder.pattern("/admin/articles"))
+                    .hasAnyAuthority("PERMISSION_VIEW_ARTICLE")
+                
+                // Public article access
+                .requestMatchers(mvcMatcherBuilder.pattern("/articles/**"))
+                    .hasAnyAuthority("PERMISSION_VIEW_ARTICLE")
+                
                 .anyRequest().authenticated()
             )
             .formLogin((form) -> form

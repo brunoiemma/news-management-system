@@ -2,6 +2,8 @@ package com.example.demo.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "users")
@@ -22,9 +24,17 @@ public class User {
     private String firstName;
     private String lastName;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "role_id", nullable = false)
     private Role role;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+        name = "user_permissions",
+        joinColumns = @JoinColumn(name = "user_id")
+    )
+    @Column(name = "permission")
+    private Set<String> permissions = new HashSet<>();
 
     private boolean active = true;
 
@@ -44,6 +54,7 @@ public class User {
         updatedAt = LocalDateTime.now();
     }
 
+    // Standard getters and setters
     public Long getId() {
         return id;
     }
@@ -98,6 +109,22 @@ public class User {
 
     public void setRole(Role role) {
         this.role = role;
+    }
+
+    public Set<String> getPermissions() {
+        return permissions;
+    }
+
+    public void setPermissions(Set<String> permissions) {
+        this.permissions = permissions;
+    }
+
+    public void addPermission(String permission) {
+        this.permissions.add(permission);
+    }
+
+    public void removePermission(String permission) {
+        this.permissions.remove(permission);
     }
 
     public boolean isActive() {

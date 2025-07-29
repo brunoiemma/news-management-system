@@ -8,20 +8,32 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService implements UserDetailsService {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final RoleService roleService;
 
     @Autowired
-    private PasswordEncoder passwordEncoder;
+    public UserService(UserRepository userRepository, 
+                      PasswordEncoder passwordEncoder,
+                      RoleService roleService) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.roleService = roleService;
+    }
 
     @Override
+    @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         System.out.println("==================== LOGIN ATTEMPT ====================");
         System.out.println("DEBUG: Attempting to load user: " + username);
@@ -33,7 +45,7 @@ public class UserService implements UserDetailsService {
         System.out.println("DEBUG: ID: " + user.getId());
         System.out.println("DEBUG: Username: " + user.getUsername());
         System.out.println("DEBUG: Password hash length: " + (user.getPassword() != null ? user.getPassword().length() : "null"));
-        System.out.println("DEBUG: Raw role value: " + user.getRole());
+        System.out.println("DEBUG: Role: " + user.getRole().getName());
         System.out.println("DEBUG: Active status: " + user.isActive());
 
         if (!user.isActive()) {
@@ -47,22 +59,18 @@ public class UserService implements UserDetailsService {
             throw new UsernameNotFoundException("No role assigned to user: " + username);
         }
 
-        String role = userRole.name();
-        System.out.println("DEBUG: Raw password from database: [" + user.getPassword() + "]");
-        System.out.println("DEBUG: Password length: " + user.getPassword().length());
-        System.out.println("DEBUG: Password characters:");
-        for (char c : user.getPassword().toCharArray()) {
-            System.out.println("  " + c + " (" + (int)c + ")");
-        }
+        // Create authorities from role and permissions
+        List<SimpleGrantedAuthority> authorities = user.getPermissions().stream()
+            .map(permission -> new SimpleGrantedAuthority("PERMISSION_" + permission))
+            .collect(Collectors.toList());
         
-        // Remove ROLE_ prefix if present
-        String processedRole = role.startsWith("ROLE_") ? role.substring(5) : role;
-        System.out.println("DEBUG: Processed role: " + processedRole);
+        // Add role as an authority
+        authorities.add(new SimpleGrantedAuthority(userRole.getName()));
             
         UserDetails userDetails = org.springframework.security.core.userdetails.User
             .withUsername(username)
             .password(user.getPassword())
-            .roles(processedRole)
+            .authorities(authorities)
             .build();
             
         System.out.println("DEBUG: Created UserDetails with:");
@@ -71,37 +79,58 @@ public class UserService implements UserDetailsService {
         System.out.println("  Authorities: " + userDetails.getAuthorities());
         System.out.println("====================================================");
             
-        System.out.println("DEBUG: Created UserDetails successfully");
-        System.out.println("DEBUG: Assigned authorities: " + userDetails.getAuthorities());
         return userDetails;
     }
 
-    // User Management Methods
+    @Transactional(readOnly = true)
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
 
+    @Transactional(readOnly = true)
     public Optional<User> getUserById(Long id) {
         return userRepository.findById(id);
     }
 
+    @Transactional(readOnly = true)
     public Optional<User> getUserByUsername(String username) {
         return userRepository.findByUsername(username);
     }
 
+    @Transactional
     public User createUser(User user) {
         // Encode password before saving
         user.setPassword(passwordEncoder.encode(user.getPassword()));
+        
+        // Validate role exists
+        Role role = roleService.getRoleById(user.getRole().getId())
+            .orElseThrow(() -> new IllegalArgumentException("Invalid role specified"));
+        user.setRole(role);
+        
         return userRepository.save(user);
     }
 
+    @Transactional
     public User updateUser(Long id, User userDetails) {
         return userRepository.findById(id).map(user -> {
             user.setEmail(userDetails.getEmail());
             user.setFirstName(userDetails.getFirstName());
             user.setLastName(userDetails.getLastName());
-            user.setRole(userDetails.getRole());
+            
+            // Validate and set role if changed
+            if (userDetails.getRole() != null && 
+                !user.getRole().getId().equals(userDetails.getRole().getId())) {
+                Role role = roleService.getRoleById(userDetails.getRole().getId())
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid role specified"));
+                user.setRole(role);
+            }
+            
             user.setActive(userDetails.isActive());
+            
+            // Update permissions if provided
+            if (userDetails.getPermissions() != null) {
+                user.setPermissions(userDetails.getPermissions());
+            }
             
             // Only update password if it's provided
             if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
@@ -109,9 +138,10 @@ public class UserService implements UserDetailsService {
             }
             
             return userRepository.save(user);
-        }).orElseThrow(() -> new RuntimeException("User not found"));
+        }).orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
     }
 
+    @Transactional
     public void deleteUser(Long id) {
         userRepository.findById(id).ifPresent(user -> {
             user.setActive(false);
@@ -119,6 +149,7 @@ public class UserService implements UserDetailsService {
         });
     }
 
+    @Transactional
     public boolean changePassword(Long id, String oldPassword, String newPassword) {
         return userRepository.findById(id).map(user -> {
             if (passwordEncoder.matches(oldPassword, user.getPassword())) {
@@ -130,28 +161,34 @@ public class UserService implements UserDetailsService {
         }).orElse(false);
     }
 
-    // Permission checking method
+    @Transactional(readOnly = true)
     public boolean hasPermission(User user, String permission) {
         if (!user.isActive()) {
             return false;
         }
 
-    switch (user.getRole().name()) {
-        case "ROLE_ADMIN":
-                return true; // Admin has all permissions
-        case "ROLE_PUBLISHER":
-                return permission.equals("PUBLISH_ARTICLE") || 
-                       permission.equals("VIEW_ARTICLE") ||
-                       permission.equals("REVIEW_ARTICLE");
-        case "ROLE_REDACTOR":
-                return permission.equals("CREATE_ARTICLE") || 
-                       permission.equals("EDIT_ARTICLE") ||
-                       permission.equals("VIEW_ARTICLE") ||
-                       permission.equals("PUBLISH_OWN_ARTICLE");
-        case "ROLE_SUBSCRIBER":
-                return permission.equals("VIEW_ARTICLE");
-            default:
-                return false;
+        // Admin role has all permissions
+        if (user.getRole().getName().equals("ROLE_ADMIN")) {
+            return true;
         }
+
+        // Check user's explicit permissions
+        return user.getPermissions().contains(permission);
+    }
+
+    @Transactional
+    public void addPermission(Long userId, String permission) {
+        userRepository.findById(userId).ifPresent(user -> {
+            user.addPermission(permission);
+            userRepository.save(user);
+        });
+    }
+
+    @Transactional
+    public void removePermission(Long userId, String permission) {
+        userRepository.findById(userId).ifPresent(user -> {
+            user.removePermission(permission);
+            userRepository.save(user);
+        });
     }
 }
