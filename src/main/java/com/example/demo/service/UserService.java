@@ -41,12 +41,13 @@ public class UserService implements UserDetailsService {
             throw new UsernameNotFoundException("User is not active: " + username);
         }
 
-        String role = user.getRole();
-        if (role == null || role.trim().isEmpty()) {
+        Role userRole = user.getRole();
+        if (userRole == null) {
             System.out.println("DEBUG: No role found for user");
             throw new UsernameNotFoundException("No role assigned to user: " + username);
         }
 
+        String role = userRole.name();
         System.out.println("DEBUG: Raw password from database: [" + user.getPassword() + "]");
         System.out.println("DEBUG: Password length: " + user.getPassword().length());
         System.out.println("DEBUG: Password characters:");
@@ -135,19 +136,19 @@ public class UserService implements UserDetailsService {
             return false;
         }
 
-        switch (user.getRole()) {
-            case ROLE_ADMIN:
+    switch (user.getRole().name()) {
+        case "ROLE_ADMIN":
                 return true; // Admin has all permissions
-            case ROLE_PUBLISHER:
+        case "ROLE_PUBLISHER":
                 return permission.equals("PUBLISH_ARTICLE") || 
                        permission.equals("VIEW_ARTICLE") ||
                        permission.equals("REVIEW_ARTICLE");
-            case ROLE_REDACTOR:
+        case "ROLE_REDACTOR":
                 return permission.equals("CREATE_ARTICLE") || 
                        permission.equals("EDIT_ARTICLE") ||
                        permission.equals("VIEW_ARTICLE") ||
                        permission.equals("PUBLISH_OWN_ARTICLE");
-            case ROLE_SUBSCRIBER:
+        case "ROLE_SUBSCRIBER":
                 return permission.equals("VIEW_ARTICLE");
             default:
                 return false;
