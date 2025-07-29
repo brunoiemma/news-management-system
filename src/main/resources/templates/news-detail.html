@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:text="${article.title}">Article Title</title>
+</head>
+<body>
+    <article>
+        <header>
+            <h1 th:text="${article.title}">Article Title</h1>
+            <div class="metadata">
+                <span th:text="${article.category}">Category</span>
+                <span th:text="${article.publishDate}">Publish Date</span>
+                <span th:text="${article.viewCount + ' views'}">Views</span>
+            </div>
+        </header>
+
+        <div class="content" th:utext="${article.content}">
+            Article content goes here...
+        </div>
+
+        <footer th:if="${article.source}">
+            <p>Source: <a th:href="${article.sourceUrl}" th:text="${article.source}">Source</a></p>
+        </footer>
+
+        <div th:if="${article.imageUrl}" class="article-image">
+            <img th:src="${article.imageUrl}" alt="Article Image"/>
+        </div>
+    </article>
+</body>
+</html>

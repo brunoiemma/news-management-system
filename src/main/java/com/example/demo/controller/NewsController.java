@@ -42,7 +42,8 @@ public class NewsController {
 
     @GetMapping("/news/{id}")
     public String newsDetail(@PathVariable Long id, Model model, HttpServletRequest request) {
-        // Incrementar vistas
+        Article article = newsService.getArticleById(id);
+        model.addAttribute("article", article);
         newsService.incrementViews(id);
         visitorStatsService.recordVisit(request, "news/" + id);
         return "news-detail";

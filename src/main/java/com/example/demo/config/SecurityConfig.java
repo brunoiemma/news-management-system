@@ -54,15 +54,15 @@ public class SecurityConfig {
                 
                 // Article Management
                 .requestMatchers(mvcMatcherBuilder.pattern("/admin/articles/create"))
-                    .hasAnyAuthority("PERMISSION_CREATE_ARTICLE")
+                    .hasAnyAuthority("PERMISSION_CREATE_ARTICLE", "ROLE_ADMIN")
                 .requestMatchers(mvcMatcherBuilder.pattern("/admin/articles/edit/**"))
-                    .hasAnyAuthority("PERMISSION_EDIT_ARTICLE")
+                    .hasAnyAuthority("PERMISSION_EDIT_ARTICLE", "ROLE_ADMIN")
                 .requestMatchers(mvcMatcherBuilder.pattern("/admin/articles/delete/**"))
-                    .hasAnyAuthority("PERMISSION_DELETE_ARTICLE")
+                    .hasAnyAuthority("PERMISSION_DELETE_ARTICLE", "ROLE_ADMIN")
                 .requestMatchers(mvcMatcherBuilder.pattern("/admin/articles/publish/**"))
-                    .hasAnyAuthority("PERMISSION_PUBLISH_ARTICLE")
+                    .hasAnyAuthority("PERMISSION_PUBLISH_ARTICLE", "ROLE_ADMIN")
                 .requestMatchers(mvcMatcherBuilder.pattern("/admin/articles"))
-                    .hasAnyAuthority("PERMISSION_VIEW_ARTICLE")
+                    .hasAnyAuthority("PERMISSION_VIEW_ARTICLE", "ROLE_ADMIN")
                 
                 // Public article access
                 .requestMatchers(mvcMatcherBuilder.pattern("/articles/**"))
