@@ -24,8 +24,8 @@ public class User {
     private String firstName;
     private String lastName;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "role_id", nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false)
     private Role role;
 
     @ElementCollection(fetch = FetchType.EAGER)

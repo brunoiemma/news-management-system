@@ -1,10 +1,3 @@
--- Initialize roles
-INSERT INTO roles (name, description) VALUES
-('ROLE_ADMIN', 'Full access to everything'),
-('ROLE_PUBLISHER', 'Can review and publish articles'),
-('ROLE_REDACTOR', 'Can create and edit articles'),
-('ROLE_SUBSCRIBER', 'Can only read published articles');
-
 -- Insert articles
 INSERT INTO article (title, content, category, publish_date, view_count, status) VALUES
 -- Published articles
@@ -22,15 +15,11 @@ DELETE FROM user_permissions;
 DELETE FROM users;
 
 -- Insert default users with different roles (password: admin for all)
-INSERT INTO users (username, password, email, first_name, last_name, role_id, active) VALUES 
-('admin', '$2a$10$7hFLSnApv7CZ66QWpw5bluNiH38N2.qTpCTI7Zuc.A1vbG3EXVBCK', 'admin@example.com', 'Admin', 'User', 
- (SELECT id FROM roles WHERE name = 'ROLE_ADMIN'), true),
-('publisher', '$2a$10$7hFLSnApv7CZ66QWpw5bluNiH38N2.qTpCTI7Zuc.A1vbG3EXVBCK', 'publisher@example.com', 'Publisher', 'User', 
- (SELECT id FROM roles WHERE name = 'ROLE_PUBLISHER'), true),
-('redactor', '$2a$10$7hFLSnApv7CZ66QWpw5bluNiH38N2.qTpCTI7Zuc.A1vbG3EXVBCK', 'redactor@example.com', 'Redactor', 'User', 
- (SELECT id FROM roles WHERE name = 'ROLE_REDACTOR'), true),
-('subscriber', '$2a$10$7hFLSnApv7CZ66QWpw5bluNiH38N2.qTpCTI7Zuc.A1vbG3EXVBCK', 'subscriber@example.com', 'Subscriber', 'User', 
- (SELECT id FROM roles WHERE name = 'ROLE_SUBSCRIBER'), true);
+INSERT INTO users (username, password, email, first_name, last_name, role, active) VALUES 
+('admin', '$2a$10$7hFLSnApv7CZ66QWpw5bluNiH38N2.qTpCTI7Zuc.A1vbG3EXVBCK', 'admin@example.com', 'Admin', 'User', 'ROLE_ADMIN', true),
+('publisher', '$2a$10$7hFLSnApv7CZ66QWpw5bluNiH38N2.qTpCTI7Zuc.A1vbG3EXVBCK', 'publisher@example.com', 'Publisher', 'User', 'ROLE_PUBLISHER', true),
+('redactor', '$2a$10$7hFLSnApv7CZ66QWpw5bluNiH38N2.qTpCTI7Zuc.A1vbG3EXVBCK', 'redactor@example.com', 'Redactor', 'User', 'ROLE_REDACTOR', true),
+('subscriber', '$2a$10$7hFLSnApv7CZ66QWpw5bluNiH38N2.qTpCTI7Zuc.A1vbG3EXVBCK', 'subscriber@example.com', 'Subscriber', 'User', 'ROLE_SUBSCRIBER', true);
 
 -- Add permissions for publisher
 INSERT INTO user_permissions (user_id, permission) 

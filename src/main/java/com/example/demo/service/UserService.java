@@ -21,15 +21,12 @@ public class UserService implements UserDetailsService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final RoleService roleService;
 
     @Autowired
     public UserService(UserRepository userRepository, 
-                      PasswordEncoder passwordEncoder,
-                      RoleService roleService) {
+                      PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
-        this.roleService = roleService;
     }
 
     @Override
@@ -45,7 +42,7 @@ public class UserService implements UserDetailsService {
         System.out.println("DEBUG: ID: " + user.getId());
         System.out.println("DEBUG: Username: " + user.getUsername());
         System.out.println("DEBUG: Password hash length: " + (user.getPassword() != null ? user.getPassword().length() : "null"));
-        System.out.println("DEBUG: Role: " + user.getRole().getName());
+        System.out.println("DEBUG: Raw role value: " + user.getRole().name());
         System.out.println("DEBUG: Active status: " + user.isActive());
 
         if (!user.isActive()) {
@@ -59,13 +56,22 @@ public class UserService implements UserDetailsService {
             throw new UsernameNotFoundException("No role assigned to user: " + username);
         }
 
+        System.out.println("DEBUG: Raw password from database: [" + user.getPassword() + "]");
+        System.out.println("DEBUG: Password length: " + user.getPassword().length());
+        System.out.println("DEBUG: Password characters:");
+        for (char c : user.getPassword().toCharArray()) {
+            System.out.println("  " + c + " (" + (int)c + ")");
+        }
+
+        System.out.println("DEBUG: Processed role: " + userRole.name().substring(5)); // Remove ROLE_ prefix
+
         // Create authorities from role and permissions
         List<SimpleGrantedAuthority> authorities = user.getPermissions().stream()
             .map(permission -> new SimpleGrantedAuthority("PERMISSION_" + permission))
             .collect(Collectors.toList());
         
         // Add role as an authority
-        authorities.add(new SimpleGrantedAuthority(userRole.getName()));
+        authorities.add(new SimpleGrantedAuthority(userRole.name()));
             
         UserDetails userDetails = org.springframework.security.core.userdetails.User
             .withUsername(username)
@@ -101,12 +107,6 @@ public class UserService implements UserDetailsService {
     public User createUser(User user) {
         // Encode password before saving
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        
-        // Validate role exists
-        Role role = roleService.getRoleById(user.getRole().getId())
-            .orElseThrow(() -> new IllegalArgumentException("Invalid role specified"));
-        user.setRole(role);
-        
         return userRepository.save(user);
     }
 
@@ -117,12 +117,9 @@ public class UserService implements UserDetailsService {
             user.setFirstName(userDetails.getFirstName());
             user.setLastName(userDetails.getLastName());
             
-            // Validate and set role if changed
-            if (userDetails.getRole() != null && 
-                !user.getRole().getId().equals(userDetails.getRole().getId())) {
-                Role role = roleService.getRoleById(userDetails.getRole().getId())
-                    .orElseThrow(() -> new IllegalArgumentException("Invalid role specified"));
-                user.setRole(role);
+            // Update role if provided
+            if (userDetails.getRole() != null) {
+                user.setRole(userDetails.getRole());
             }
             
             user.setActive(userDetails.isActive());
@@ -168,7 +165,7 @@ public class UserService implements UserDetailsService {
         }
 
         // Admin role has all permissions
-        if (user.getRole().getName().equals("ROLE_ADMIN")) {
+        if (user.getRole() == Role.ROLE_ADMIN) {
             return true;
         }
 
