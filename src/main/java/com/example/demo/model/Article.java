@@ -13,25 +13,43 @@ public class Article {
     @Column(nullable = false)
     private String title;
 
-    @Column(length = 2000)
+    @Column(columnDefinition = "TEXT")
     private String content;
 
-    private String source;
-    private String sourceUrl;
-    private String imageUrl;
+    @Column(nullable = false)
+    private String author;
 
     @Column(nullable = false)
     private String category;
 
-    @Column(name = "view_count")
-    private Long viewCount = 0L;
+    @Column(name = "image_url")
+    private String imageUrl;
 
-    @Column(nullable = false)
+    @Column(name = "source_url")
+    private String sourceUrl;
+
+    private String source;
+
+    @Column(name = "view_count")
+    private int viewCount = 0;
+
+    @Column(name = "publish_date")
     private LocalDateTime publishDate;
+
+    @Column(name = "submission_date")
+    private LocalDateTime submissionDate;
+
+    @Column(name = "last_modified")
+    private LocalDateTime lastModified;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ArticleStatus status = ArticleStatus.DRAFT;
+
+    @Column(length = 500)
+    private String summary;
+
+    // Getters and Setters
 
     public Long getId() {
         return id;
@@ -57,28 +75,12 @@ public class Article {
         this.content = content;
     }
 
-    public String getSource() {
-        return source;
+    public String getAuthor() {
+        return author;
     }
 
-    public void setSource(String source) {
-        this.source = source;
-    }
-
-    public String getSourceUrl() {
-        return sourceUrl;
-    }
-
-    public void setSourceUrl(String sourceUrl) {
-        this.sourceUrl = sourceUrl;
-    }
-
-    public String getImageUrl() {
-        return imageUrl;
-    }
-
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
+    public void setAuthor(String author) {
+        this.author = author;
     }
 
     public String getCategory() {
@@ -89,11 +91,35 @@ public class Article {
         this.category = category;
     }
 
-    public Long getViewCount() {
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
+    public String getSourceUrl() {
+        return sourceUrl;
+    }
+
+    public void setSourceUrl(String sourceUrl) {
+        this.sourceUrl = sourceUrl;
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
+    }
+
+    public int getViewCount() {
         return viewCount;
     }
 
-    public void setViewCount(Long viewCount) {
+    public void setViewCount(int viewCount) {
         this.viewCount = viewCount;
     }
 
@@ -105,11 +131,50 @@ public class Article {
         this.publishDate = publishDate;
     }
 
+    public LocalDateTime getSubmissionDate() {
+        return submissionDate;
+    }
+
+    public void setSubmissionDate(LocalDateTime submissionDate) {
+        this.submissionDate = submissionDate;
+    }
+
+    public LocalDateTime getLastModified() {
+        return lastModified;
+    }
+
+    public void setLastModified(LocalDateTime lastModified) {
+        this.lastModified = lastModified;
+    }
+
     public ArticleStatus getStatus() {
         return status;
     }
 
     public void setStatus(ArticleStatus status) {
         this.status = status;
+    }
+
+    public String getSummary() {
+        return summary;
+    }
+
+    public void setSummary(String summary) {
+        this.summary = summary;
+    }
+
+    // JPA callbacks
+
+    @PrePersist
+    protected void onCreate() {
+        lastModified = LocalDateTime.now();
+        if (submissionDate == null) {
+            submissionDate = LocalDateTime.now();
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        lastModified = LocalDateTime.now();
     }
 }

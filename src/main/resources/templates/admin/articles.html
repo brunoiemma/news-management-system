@@ -20,7 +20,7 @@
                         <option value="">All Statuses</option>
                         <option th:each="status : ${statuses}"
                                 th:value="${status}"
-                                th:text="${status}"
+                                th:text="${status.displayName}"
                                 th:selected="${status == selectedStatus}">
                         </option>
                     </select>
@@ -46,12 +46,16 @@
                     <td th:text="${article.title}">Title</td>
                     <td th:text="${article.category}">Category</td>
                     <td>
-                        <span th:text="${article.status}"
+                        <span th:text="${article.status.displayName}"
                               th:class="${'badge ' + 
                                          (article.status == T(com.example.demo.model.ArticleStatus).PUBLISHED ? 'bg-success' : '') + 
                                          (article.status == T(com.example.demo.model.ArticleStatus).DRAFT ? 'bg-warning' : '') + 
                                          (article.status == T(com.example.demo.model.ArticleStatus).IN_REVIEW ? 'bg-info' : '') + 
-                                         (article.status == T(com.example.demo.model.ArticleStatus).DELETED ? 'bg-danger' : '')}">
+                                         (article.status == T(com.example.demo.model.ArticleStatus).REJECTED ? 'bg-danger' : '') +
+                                         (article.status == T(com.example.demo.model.ArticleStatus).ARCHIVED ? 'bg-secondary' : '') +
+                                         (article.status == T(com.example.demo.model.ArticleStatus).SCHEDULED ? 'bg-primary' : '') +
+                                         (article.status == T(com.example.demo.model.ArticleStatus).NEEDS_REVISION ? 'bg-warning' : '') +
+                                         (article.status == T(com.example.demo.model.ArticleStatus).PENDING_APPROVAL ? 'bg-info' : '')}">
                             Status
                         </span>
                     </td>

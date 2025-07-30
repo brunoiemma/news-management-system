@@ -1,0 +1,296 @@
+/* Base Layout */
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+header {
+    background-color: #333;
+    color: white;
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+}
+
+nav {
+    background-color: #fff;
+    width: 250px;
+    position: fixed;
+    top: 60px;
+    left: 0;
+    bottom: 0;
+    padding: 1rem;
+    overflow-y: auto;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+}
+
+main {
+    margin-left: 250px;
+    margin-top: 60px;
+    padding: 2rem;
+    flex: 1;
+}
+
+footer {
+    background-color: #333;
+    color: white;
+    text-align: center;
+    padding: 1rem;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+}
+
+/* Navigation Styles */
+nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+nav ul li {
+    margin-bottom: 0.5rem;
+}
+
+nav ul li h3 {
+    color: #495057;
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 1.5rem 0 0.5rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+nav ul li ul {
+    margin-left: 1rem;
+}
+
+nav ul li ul li {
+    margin: 0.5rem 0;
+}
+
+nav a {
+    color: #6c757d;
+    text-decoration: none;
+    display: block;
+    padding: 0.5rem;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+nav a:hover {
+    color: #007bff;
+    background-color: #f8f9fa;
+    text-decoration: none;
+}
+
+/* User Info */
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.user-info span {
+    color: white;
+}
+
+/* Action Cards */
+.action-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.action-card {
+    background-color: #fff;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    color: inherit;
+}
+
+.action-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    text-decoration: none;
+    color: inherit;
+}
+
+.action-card h3 {
+    color: #007bff;
+    margin-bottom: 0.5rem;
+}
+
+/* Activity Items */
+.activity-list {
+    margin-top: 1rem;
+}
+
+.activity-item {
+    background-color: #fff;
+    padding: 1rem;
+    border-radius: 4px;
+    border-left: 4px solid #007bff;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+
+.activity-item:hover {
+    transform: translateX(5px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Article Actions */
+.article-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+/* Link Grid */
+.link-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.link-card {
+    background-color: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    text-align: center;
+    transition: transform 0.3s ease;
+    border: 1px solid #e9ecef;
+}
+
+.link-card:hover {
+    transform: translateY(-5px);
+}
+
+/* Status Grid */
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.status-card {
+    background-color: #fff;
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid #e9ecef;
+}
+
+/* Category Cards */
+.category-card {
+    background-color: #fff;
+    padding: 1.5rem;
+    border-radius: 8px;
+    text-align: center;
+    transition: all 0.3s ease;
+    border: 1px solid #e9ecef;
+}
+
+.category-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Welcome Section */
+.welcome {
+    background-color: #fff;
+    padding: 2rem;
+    border-radius: 8px;
+    text-align: center;
+    margin-bottom: 2rem;
+    border: 1px solid #e9ecef;
+}
+
+.welcome h2 {
+    color: #007bff;
+    margin-bottom: 1rem;
+}
+
+/* Role-specific colors */
+.role-admin .stat-card { border-left: 4px solid #dc3545; }
+.role-publisher .stat-card { border-left: 4px solid #28a745; }
+.role-redactor .stat-card { border-left: 4px solid #ffc107; }
+.role-subscriber .stat-card { border-left: 4px solid #17a2b8; }
+
+/* Additional Responsive Styles */
+@media (max-width: 768px) {
+    nav {
+        width: 100%;
+        position: static;
+        margin-top: 60px;
+    }
+
+    main {
+        margin-left: 0;
+        margin-top: 0;
+        padding: 1rem;
+    }
+
+    .action-grid,
+    .link-grid,
+    .status-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .article-actions {
+        flex-direction: column;
+    }
+
+    .article-actions .button {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+
+    .welcome {
+        padding: 1rem;
+    }
+
+    header {
+        flex-direction: column;
+        text-align: center;
+        padding: 0.5rem;
+    }
+
+    .user-info {
+        margin-top: 0.5rem;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
+
+/* Print styles */
+@media print {
+    nav, footer, .user-info form {
+        display: none;
+    }
+
+    main {
+        margin: 0;
+        padding: 0;
+    }
+
+    .action-card, .link-card, .status-card, .category-card {
+        break-inside: avoid;
+    }
+}

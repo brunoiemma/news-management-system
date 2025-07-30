@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <title>Subscriber Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+</head>
+<body>
+    <header>
+        <h1>Subscriber Dashboard</h1>
+        <div class="user-info">
+            <span th:text="${#authentication.name}" class="font-weight-bold">Username</span>
+            <span class="badge badge-success">Subscriber</span>
+            <form th:action="@{/logout}" method="post" style="display: inline;">
+                <button type="submit" class="button button-secondary">Logout</button>
+            </form>
+        </div>
+    </header>
+
+    <nav>
+        <ul>
+            <!-- Article Access -->
+            <li sec:authorize="hasAuthority('VIEW_ARTICLE')">
+                <h3>News Articles</h3>
+                <ul>
+                    <li><a th:href="@{/articles}">Browse Articles</a></li>
+                    <li><a th:href="@{/articles/latest}">Latest News</a></li>
+                    <li><a th:href="@{/articles/bookmarked}">My Bookmarks</a></li>
+                    <li><a th:href="@{/articles/recommended}">Recommended</a></li>
+                </ul>
+            </li>
+
+            <!-- Categories -->
+            <li>
+                <h3>Categories</h3>
+                <ul>
+                    <li><a th:href="@{/articles/category/technology}">Technology</a></li>
+                    <li><a th:href="@{/articles/category/sports}">Sports</a></li>
+                    <li><a th:href="@{/articles/category/politics}">Politics</a></li>
+                    <li><a th:href="@{/articles/category/entertainment}">Entertainment</a></li>
+                </ul>
+            </li>
+
+            <!-- Account -->
+            <li>
+                <h3>My Account</h3>
+                <ul>
+                    <li><a th:href="@{/profile}">Profile Settings</a></li>
+                    <li><a th:href="@{/preferences}">Reading Preferences</a></li>
+                    <li><a th:href="@{/notifications}">Notifications</a></li>
+                </ul>
+            </li>
+        </ul>
+    </nav>
+
+    <main>
+        <!-- Featured Articles -->
+        <section class="featured-articles">
+            <h2>Featured Articles</h2>
+            <div class="article-grid">
+                <div th:if="${featuredArticles}" th:each="article : ${featuredArticles}" class="article-card">
+                    <h3 th:text="${article.title}">Article Title</h3>
+                    <p class="text-muted" th:text="${article.summary}">Article Summary</p>
+                    <p class="text-muted" th:text="${article.publishDate}">Publish Date</p>
+                    <div class="article-actions">
+                        <a th:href="@{/articles/{id}(id=${article.id})}" class="button">Read More</a>
+                        <button th:onclick="'bookmarkArticle(' + ${article.id} + ')'" class="button button-secondary">
+                            <i class="fas fa-bookmark"></i> Bookmark
+                        </button>
+                    </div>
+                </div>
+                <div th:unless="${featuredArticles}" class="alert alert-info">
+                    <p>No featured articles available</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Reading History -->
+        <section class="reading-history">
+            <h2>Recently Read</h2>
+            <div class="article-grid">
+                <div th:if="${recentlyRead}" th:each="article : ${recentlyRead}" class="article-card">
+                    <h3 th:text="${article.title}">Article Title</h3>
+                    <p class="text-muted" th:text="${article.readDate}">Read Date</p>
+                    <div class="article-actions">
+                        <a th:href="@{/articles/{id}(id=${article.id})}" class="button">Read Again</a>
+                        <a th:href="@{/articles/related/{id}(id=${article.id})}" class="button button-secondary">Similar Articles</a>
+                    </div>
+                </div>
+                <div th:unless="${recentlyRead}" class="alert alert-info">
+                    <p>No reading history available</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recommended Articles -->
+        <section class="recommended">
+            <h2>Recommended For You</h2>
+            <div class="article-grid">
+                <div th:if="${recommendedArticles}" th:each="article : ${recommendedArticles}" class="article-card">
+                    <h3 th:text="${article.title}">Article Title</h3>
+                    <p class="text-muted" th:text="${article.summary}">Article Summary</p>
+                    <div class="article-actions">
+                        <a th:href="@{/articles/{id}(id=${article.id})}" class="button">Read More</a>
+                        <button th:onclick="'bookmarkArticle(' + ${article.id} + ')'" class="button button-secondary">
+                            <i class="fas fa-bookmark"></i> Bookmark
+                        </button>
+                    </div>
+                </div>
+                <div th:unless="${recommendedArticles}" class="alert alert-info">
+                    <p>No recommendations available</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Categories -->
+        <section class="categories">
+            <h2>Browse by Category</h2>
+            <div class="category-grid">
+                <div th:each="category : ${categories}" class="category-card">
+                    <h3 th:text="${category.name}">Category Name</h3>
+                    <p class="text-muted" th:text="${category.articleCount + ' articles'}">0 articles</p>
+                    <a th:href="@{/articles/category/{id}(id=${category.id})}" class="button">Browse</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>Subscriber Dashboard - News Management System</p>
+        <p class="text-muted">Version 1.0.0</p>
+    </footer>
+</body>
+</html>

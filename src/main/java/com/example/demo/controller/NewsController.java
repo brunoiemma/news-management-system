@@ -1,7 +1,10 @@
 package com.example.demo.controller;
 
 import com.example.demo.model.Article;
+import com.example.demo.model.ArticleStatus;
+import com.example.demo.repository.ArticleRepository;
 import com.example.demo.service.NewsService;
+import com.example.demo.service.ResourceNotFoundException;
 import com.example.demo.service.VisitorStatsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -21,9 +24,12 @@ public class NewsController {
     @Autowired
     private VisitorStatsService visitorStatsService;
 
+    @Autowired
+    private ArticleRepository articleRepository;
+
     @GetMapping("/")
     public String home(Model model, HttpServletRequest request) {
-        List<Article> topArticles = newsService.getTopArticles();
+        List<Article> topArticles = newsService.getFeaturedArticles();
         model.addAttribute("topArticles", topArticles);
         visitorStatsService.recordVisit(request, "home");
         return "index";
@@ -31,8 +37,8 @@ public class NewsController {
 
     @GetMapping("/category/{category}")
     public String categoryNews(@PathVariable String category, Model model, HttpServletRequest request) {
-        List<Article> articles = newsService.getArticlesByCategory(category);
-        List<Article> topArticles = newsService.getTopArticles();
+        List<Article> articles = articleRepository.findByCategoryAndStatus(category, ArticleStatus.PUBLISHED);
+        List<Article> topArticles = newsService.getFeaturedArticles();
         model.addAttribute("articles", articles);
         model.addAttribute("topArticles", topArticles);
         model.addAttribute("category", category);
@@ -42,9 +48,10 @@ public class NewsController {
 
     @GetMapping("/news/{id}")
     public String newsDetail(@PathVariable Long id, Model model, HttpServletRequest request) {
-        Article article = newsService.getArticleById(id);
+        Article article = articleRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Article not found"));
         model.addAttribute("article", article);
-        newsService.incrementViews(id);
+        newsService.incrementViewCount(id);
         visitorStatsService.recordVisit(request, "news/" + id);
         return "news-detail";
     }

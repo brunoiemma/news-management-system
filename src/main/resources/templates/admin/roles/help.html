@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layout}">
+<head>
+    <title>Role Help</title>
+</head>
+<body>
+    <div layout:fragment="content">
+        <div class="container-fluid px-4">
+            <h1 class="mt-4">Role Help</h1>
+            <ol class="breadcrumb mb-4">
+                <li class="breadcrumb-item"><a th:href="@{/admin}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a th:href="@{/admin/roles}">Roles</a></li>
+                <li class="breadcrumb-item active">Help</li>
+            </ol>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Role Descriptions and Permissions
+                </div>
+                <div class="card-body">
+                    <div class="mb-4" th:each="role : ${roles}">
+                        <h3 th:text="${#strings.replace(role.name, 'ROLE_', '')}">ADMIN</h3>
+                        <p th:text="${role.description}" class="lead">Description</p>
+                        
+                        <div class="card bg-light mb-3">
+                            <div class="card-body">
+                                <h5>Detailed Permissions:</h5>
+                                <ul th:switch="${role.name}">
+                                    <div th:case="'ROLE_ADMIN'">
+                                        <li>Full access to user management (create, edit, delete users)</li>
+                                        <li>View and manage system roles</li>
+                                        <li>Access to all article management features</li>
+                                        <li>System configuration and settings</li>
+                                        <li>View system statistics and reports</li>
+                                    </div>
+                                    <div th:case="'ROLE_PUBLISHER'">
+                                        <li>Review submitted articles</li>
+                                        <li>Publish or reject articles</li>
+                                        <li>Edit article metadata</li>
+                                        <li>Manage article categories</li>
+                                        <li>View publishing statistics</li>
+                                    </div>
+                                    <div th:case="'ROLE_REDACTOR'">
+                                        <li>Create new articles</li>
+                                        <li>Edit own articles</li>
+                                        <li>Submit articles for review</li>
+                                        <li>View article status</li>
+                                        <li>Access to basic analytics for own articles</li>
+                                    </div>
+                                    <div th:case="'ROLE_SUBSCRIBER'">
+                                        <li>Read all published articles</li>
+                                        <li>Comment on articles (if enabled)</li>
+                                        <li>Save articles for later reading</li>
+                                        <li>Receive notifications for new articles</li>
+                                        <li>Access to personalized content recommendations</li>
+                                    </div>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

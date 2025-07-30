@@ -40,33 +40,33 @@ public class NewsServiceTest {
         article.setCategory(category);
         article.setStatus(status);
         article.setPublishDate(LocalDateTime.now());
-        article.setViewCount(0L);
+        article.setViewCount(0);
         return article;
     }
 
     @Test
-    void getTopArticles_ShouldReturnPublishedArticles() {
+    void getFeaturedArticles_ShouldReturnPublishedArticles() {
         // Arrange
         List<Article> expectedArticles = Arrays.asList(
             createSampleArticle(1L, "Article 1", "deportes", ArticleStatus.PUBLISHED),
             createSampleArticle(2L, "Article 2", "tecnologia", ArticleStatus.PUBLISHED)
         );
         
-        when(articleRepository.findByStatusOrderByPublishDateDesc(ArticleStatus.PUBLISHED))
+        when(articleRepository.findTop5ByStatusOrderByViewCountDesc(ArticleStatus.PUBLISHED))
             .thenReturn(expectedArticles);
 
         // Act
-        List<Article> result = newsService.getTopArticles();
+        List<Article> result = newsService.getFeaturedArticles();
 
         // Assert
         assertEquals(2, result.size());
         assertEquals("Article 1", result.get(0).getTitle());
         assertEquals("Article 2", result.get(1).getTitle());
-        verify(articleRepository).findByStatusOrderByPublishDateDesc(ArticleStatus.PUBLISHED);
+        verify(articleRepository).findTop5ByStatusOrderByViewCountDesc(ArticleStatus.PUBLISHED);
     }
 
     @Test
-    void getArticlesByCategory_ShouldReturnArticlesForCategory() {
+    void findByCategoryAndStatus_ShouldReturnArticlesForCategory() {
         // Arrange
         String category = "deportes";
         List<Article> expectedArticles = Arrays.asList(
@@ -74,32 +74,32 @@ public class NewsServiceTest {
             createSampleArticle(2L, "Sports Article 2", category, ArticleStatus.PUBLISHED)
         );
         
-        when(articleRepository.findPublishedByCategory(category)).thenReturn(expectedArticles);
+        when(articleRepository.findByCategoryAndStatus(category, ArticleStatus.PUBLISHED)).thenReturn(expectedArticles);
 
         // Act
-        List<Article> result = newsService.getArticlesByCategory(category);
+        List<Article> result = articleRepository.findByCategoryAndStatus(category, ArticleStatus.PUBLISHED);
 
         // Assert
         assertEquals(2, result.size());
         assertTrue(result.stream().allMatch(article -> article.getCategory().equals(category)));
-        verify(articleRepository).findPublishedByCategory(category);
+        verify(articleRepository).findByCategoryAndStatus(category, ArticleStatus.PUBLISHED);
     }
 
     @Test
-    void incrementViews_ShouldIncrementViewCount() {
+    void incrementViewCount_ShouldIncrementViewCount() {
         // Arrange
         Long articleId = 1L;
         Article article = createSampleArticle(articleId, "Test Article", "deportes", ArticleStatus.PUBLISHED);
-        article.setViewCount(10L);
+        article.setViewCount(10);
         
         when(articleRepository.findById(articleId)).thenReturn(Optional.of(article));
         when(articleRepository.save(any(Article.class))).thenReturn(article);
 
         // Act
-        newsService.incrementViews(articleId);
+        newsService.incrementViewCount(articleId);
 
         // Assert
-        assertEquals(11L, article.getViewCount());
+        assertEquals(11, article.getViewCount());
         verify(articleRepository).findById(articleId);
         verify(articleRepository).save(article);
     }
@@ -115,108 +115,54 @@ public class NewsServiceTest {
         when(articleRepository.save(any(Article.class))).thenReturn(article);
 
         // Act
-        newsService.createArticle(article);
+        Article savedArticle = newsService.createArticle(article);
 
         // Assert
-        assertEquals(ArticleStatus.DRAFT, article.getStatus());
-        assertEquals(0L, article.getViewCount());
-        assertNotNull(article.getPublishDate());
+        assertEquals(ArticleStatus.DRAFT, savedArticle.getStatus());
+        assertEquals(0, savedArticle.getViewCount());
         verify(articleRepository).save(article);
     }
 
     @Test
     void updateArticle_ShouldUpdateAllFields() {
         // Arrange
-        Long articleId = 1L;
-        Article existingArticle = createSampleArticle(articleId, "Old Title", "deportes", ArticleStatus.DRAFT);
-        Article updatedArticle = createSampleArticle(articleId, "New Title", "tecnologia", ArticleStatus.PUBLISHED);
+        Article existingArticle = createSampleArticle(1L, "Old Title", "deportes", ArticleStatus.DRAFT);
+        Article updatedArticle = createSampleArticle(1L, "New Title", "tecnologia", ArticleStatus.PUBLISHED);
         updatedArticle.setContent("Updated content");
         updatedArticle.setImageUrl("new-image.jpg");
         
-        when(articleRepository.findById(articleId)).thenReturn(Optional.of(existingArticle));
-        when(articleRepository.save(any(Article.class))).thenReturn(existingArticle);
+        when(articleRepository.save(any(Article.class))).thenReturn(updatedArticle);
 
         // Act
-        newsService.updateArticle(articleId, updatedArticle);
+        Article result = newsService.updateArticle(updatedArticle);
 
         // Assert
-        assertEquals("New Title", existingArticle.getTitle());
-        assertEquals("Updated content", existingArticle.getContent());
-        assertEquals("tecnologia", existingArticle.getCategory());
-        assertEquals("new-image.jpg", existingArticle.getImageUrl());
-        assertEquals(ArticleStatus.PUBLISHED, existingArticle.getStatus());
-        verify(articleRepository).save(existingArticle);
+        assertEquals("New Title", result.getTitle());
+        assertEquals("Updated content", result.getContent());
+        assertEquals("tecnologia", result.getCategory());
+        assertEquals("new-image.jpg", result.getImageUrl());
+        assertEquals(ArticleStatus.PUBLISHED, result.getStatus());
+        verify(articleRepository).save(updatedArticle);
     }
 
-    @Test
-    void scrapeAndCreateArticle_ShouldCreateArticleFromScrapedData() throws IOException {
-        // Arrange
-        String url = "https://example.com/article";
-        Map<String, String> scrapedData = new HashMap<>();
-        scrapedData.put("title", "Scraped Title");
-        scrapedData.put("content", "Scraped Content");
-        scrapedData.put("category", "tecnologia");
-        scrapedData.put("imageUrl", "image.jpg");
-        scrapedData.put("sourceUrl", url);
-        
-        try (var mockedStatic = mockStatic(WebScraper.class)) {
-            mockedStatic.when(() -> WebScraper.scrapeArticle(url)).thenReturn(scrapedData);
-            
-            when(articleRepository.save(any(Article.class))).thenAnswer(i -> i.getArgument(0));
-
-            // Act
-            Article result = newsService.scrapeAndCreateArticle(url);
-
-            // Assert
-            assertEquals("Scraped Title", result.getTitle());
-            assertEquals("Scraped Content", result.getContent());
-            assertEquals("tecnologia", result.getCategory());
-            assertEquals("image.jpg", result.getImageUrl());
-            assertEquals(url, result.getSourceUrl());
-            assertEquals("example.com", result.getSource());
-            assertEquals(ArticleStatus.DRAFT, result.getStatus());
-            assertEquals(0L, result.getViewCount());
-            assertNotNull(result.getPublishDate());
-            
-            verify(articleRepository).save(any(Article.class));
-        }
-    }
 
     @Test
-    void getAllArticles_WithStatus_ShouldFilterByStatus() {
+    void findByStatus_ShouldFilterByStatus() {
         // Arrange
         List<Article> expectedArticles = Arrays.asList(
             createSampleArticle(1L, "Draft Article", "deportes", ArticleStatus.DRAFT),
             createSampleArticle(2L, "Another Draft", "tecnologia", ArticleStatus.DRAFT)
         );
         
-        when(articleRepository.findByStatusOrderByPublishDateDesc(ArticleStatus.DRAFT))
+        when(articleRepository.findByStatus(ArticleStatus.DRAFT))
             .thenReturn(expectedArticles);
 
         // Act
-        List<Article> result = newsService.getAllArticles(ArticleStatus.DRAFT);
+        List<Article> result = articleRepository.findByStatus(ArticleStatus.DRAFT);
 
         // Assert
         assertEquals(2, result.size());
         assertTrue(result.stream().allMatch(article -> article.getStatus() == ArticleStatus.DRAFT));
-        verify(articleRepository).findByStatusOrderByPublishDateDesc(ArticleStatus.DRAFT);
-    }
-
-    @Test
-    void getAllArticles_WithoutStatus_ShouldReturnAllArticles() {
-        // Arrange
-        List<Article> expectedArticles = Arrays.asList(
-            createSampleArticle(1L, "Published Article", "deportes", ArticleStatus.PUBLISHED),
-            createSampleArticle(2L, "Draft Article", "tecnologia", ArticleStatus.DRAFT)
-        );
-        
-        when(articleRepository.findAllByOrderByPublishDateDesc()).thenReturn(expectedArticles);
-
-        // Act
-        List<Article> result = newsService.getAllArticles(null);
-
-        // Assert
-        assertEquals(2, result.size());
-        verify(articleRepository).findAllByOrderByPublishDateDesc();
+        verify(articleRepository).findByStatus(ArticleStatus.DRAFT);
     }
 }

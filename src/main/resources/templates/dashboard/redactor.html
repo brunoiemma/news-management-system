@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <title>Redactor Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+</head>
+<body>
+    <header>
+        <h1>Redactor Dashboard</h1>
+        <div class="user-info">
+            <span th:text="${#authentication.name}" class="font-weight-bold">Username</span>
+            <span class="badge badge-warning">Redactor</span>
+            <form th:action="@{/logout}" method="post" style="display: inline;">
+                <button type="submit" class="button button-secondary">Logout</button>
+            </form>
+        </div>
+    </header>
+
+    <nav>
+        <ul>
+            <!-- Article Management -->
+            <li>
+                <h3>Content Management</h3>
+                <ul>
+                    <li sec:authorize="hasAuthority('VIEW_ARTICLE')">
+                        <a th:href="@{/articles}">View All Articles</a>
+                    </li>
+                    <li sec:authorize="hasAuthority('CREATE_ARTICLE')">
+                        <a th:href="@{/articles/create}">Create New Article</a>
+                    </li>
+                    <li sec:authorize="hasAuthority('EDIT_ARTICLE')">
+                        <a th:href="@{/articles/drafts}">My Drafts</a>
+                    </li>
+                    <li sec:authorize="hasAuthority('REVIEW_ARTICLE')">
+                        <a th:href="@{/articles/review}">Review Queue</a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- Personal Stats -->
+            <li>
+                <h3>My Statistics</h3>
+                <ul>
+                    <li><a th:href="@{/redactor/stats}">View Performance</a></li>
+                    <li><a th:href="@{/redactor/feedback}">Editorial Feedback</a></li>
+                </ul>
+            </li>
+
+            <!-- Resources -->
+            <li>
+                <h3>Resources</h3>
+                <ul>
+                    <li><a th:href="@{/resources/style-guide}">Style Guide</a></li>
+                    <li><a th:href="@{/resources/templates}">Article Templates</a></li>
+                </ul>
+            </li>
+        </ul>
+    </nav>
+
+    <main>
+        <!-- Article Statistics -->
+        <section class="stats">
+            <h2>My Articles</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Total Articles</h3>
+                    <p th:text="${totalArticles ?: 0}" class="text-primary">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Published</h3>
+                    <p th:text="${publishedArticles ?: 0}" class="text-success">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Under Review</h3>
+                    <p th:text="${reviewArticles ?: 0}" class="text-warning">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Drafts</h3>
+                    <p th:text="${draftArticles ?: 0}" class="text-info">0</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Draft Articles -->
+        <section class="drafts">
+            <h2>My Draft Articles</h2>
+            <div class="article-grid">
+                <div th:if="${draftArticlesList}" th:each="article : ${draftArticlesList}" class="article-card">
+                    <h3 th:text="${article.title}">Article Title</h3>
+                    <p class="text-muted" th:text="${'Last modified: ' + article.lastModified}">Last Modified Date</p>
+                    <div class="article-actions">
+                        <a th:href="@{/articles/edit/{id}(id=${article.id})}" class="button">Edit</a>
+                        <a th:href="@{/articles/submit/{id}(id=${article.id})}" class="button button-success">Submit</a>
+                        <a th:href="@{/articles/delete/{id}(id=${article.id})}" class="button button-danger">Delete</a>
+                    </div>
+                </div>
+                <div th:unless="${draftArticlesList}" class="alert alert-info">
+                    <p>No draft articles</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Articles Under Review -->
+        <section class="under-review">
+            <h2>Articles Under Review</h2>
+            <div class="article-grid">
+                <div th:if="${reviewArticlesList}" th:each="article : ${reviewArticlesList}" class="article-card">
+                    <h3 th:text="${article.title}">Article Title</h3>
+                    <p class="text-muted" th:text="${'Submitted: ' + article.submissionDate}">Submission Date</p>
+                    <p class="badge badge-warning" th:text="${article.status}">Status</p>
+                    <div class="article-actions">
+                        <a th:href="@{/articles/{id}(id=${article.id})}" class="button">View</a>
+                        <a th:href="@{/articles/feedback/{id}(id=${article.id})}" class="button button-secondary">Feedback</a>
+                    </div>
+                </div>
+                <div th:unless="${reviewArticlesList}" class="alert alert-info">
+                    <p>No articles under review</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Published Articles -->
+        <section class="published">
+            <h2>Published Articles</h2>
+            <div class="article-grid">
+                <div th:if="${publishedArticlesList}" th:each="article : ${publishedArticlesList}" class="article-card">
+                    <h3 th:text="${article.title}">Article Title</h3>
+                    <p class="text-muted" th:text="${'Published: ' + article.publishDate}">Publish Date</p>
+                    <p class="badge badge-info" th:text="${'Views: ' + article.viewCount}">Views: 0</p>
+                    <div class="article-actions">
+                        <a th:href="@{/articles/{id}(id=${article.id})}" class="button">View</a>
+                        <a th:href="@{/articles/stats/{id}(id=${article.id})}" class="button button-secondary">Stats</a>
+                    </div>
+                </div>
+                <div th:unless="${publishedArticlesList}" class="alert alert-info">
+                    <p>No published articles</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>Redactor Dashboard - News Management System</p>
+        <p class="text-muted">Version 1.0.0</p>
+    </footer>
+</body>
+</html>

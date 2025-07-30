@@ -4,8 +4,11 @@ import com.example.demo.config.TestConfig;
 import com.example.demo.config.TestSecurityConfig;
 import com.example.demo.model.Article;
 import com.example.demo.model.ArticleStatus;
+import com.example.demo.repository.ArticleRepository;
 import com.example.demo.service.NewsService;
 import com.example.demo.service.VisitorStatsService;
+
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -25,7 +28,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(NewsController.class)
-@Import({TestConfig.class, TestSecurityConfig.class})
+@Import(TestSecurityConfig.class)
 public class NewsControllerTest {
 
     @Autowired
@@ -33,6 +36,9 @@ public class NewsControllerTest {
 
     @MockBean
     private NewsService newsService;
+
+    @MockBean
+    private ArticleRepository articleRepository;
 
     @MockBean
     private VisitorStatsService visitorStatsService;
@@ -45,26 +51,26 @@ public class NewsControllerTest {
         article.setCategory(category);
         article.setStatus(ArticleStatus.PUBLISHED);
         article.setPublishDate(LocalDateTime.now());
-        article.setViewCount(0L);
+        article.setViewCount(0);
         return article;
     }
 
     @Test
     @WithMockUser
-    void home_ShouldDisplayTopArticles() throws Exception {
+    void home_ShouldDisplayFeaturedArticles() throws Exception {
         // Arrange
-        List<Article> topArticles = Arrays.asList(
-            createSampleArticle(1L, "Top Article 1", "deportes"),
-            createSampleArticle(2L, "Top Article 2", "tecnologia")
+        List<Article> featuredArticles = Arrays.asList(
+            createSampleArticle(1L, "Featured Article 1", "deportes"),
+            createSampleArticle(2L, "Featured Article 2", "tecnologia")
         );
         
-        when(newsService.getTopArticles()).thenReturn(topArticles);
+        when(newsService.getFeaturedArticles()).thenReturn(featuredArticles);
 
         // Act & Assert
         mockMvc.perform(get("/"))
             .andExpect(status().isOk())
             .andExpect(view().name("index"))
-            .andExpect(model().attribute("topArticles", topArticles));
+            .andExpect(model().attribute("topArticles", featuredArticles));
 
         verify(visitorStatsService).recordVisit(any(), eq("home"));
     }
@@ -82,8 +88,8 @@ public class NewsControllerTest {
             createSampleArticle(3L, "Top Article", "tecnologia")
         );
         
-        when(newsService.getArticlesByCategory(category)).thenReturn(categoryArticles);
-        when(newsService.getTopArticles()).thenReturn(topArticles);
+        when(articleRepository.findByCategoryAndStatus(category, ArticleStatus.PUBLISHED)).thenReturn(categoryArticles);
+        when(newsService.getFeaturedArticles()).thenReturn(topArticles);
 
         // Act & Assert
         mockMvc.perform(get("/category/{category}", category))
@@ -102,7 +108,7 @@ public class NewsControllerTest {
         // Arrange
         Long articleId = 1L;
         Article article = createSampleArticle(articleId, "Test Article", "deportes");
-        when(newsService.getArticleById(articleId)).thenReturn(article);
+        when(articleRepository.findById(articleId)).thenReturn(Optional.of(article));
 
         // Act & Assert
         mockMvc.perform(get("/news/{id}", articleId))
@@ -110,7 +116,7 @@ public class NewsControllerTest {
             .andExpect(view().name("news-detail"))
             .andExpect(model().attribute("article", article));
 
-        verify(newsService).incrementViews(articleId);
+        verify(newsService).incrementViewCount(articleId);
         verify(visitorStatsService).recordVisit(any(), eq("news/" + articleId));
     }
 
@@ -121,7 +127,7 @@ public class NewsControllerTest {
             createSampleArticle(1L, "Public Article", "deportes")
         );
         
-        when(newsService.getTopArticles()).thenReturn(topArticles);
+        when(newsService.getFeaturedArticles()).thenReturn(topArticles);
 
         // Act & Assert
         mockMvc.perform(get("/"))
@@ -138,8 +144,8 @@ public class NewsControllerTest {
             createSampleArticle(1L, "Public Sports Article", category)
         );
         
-        when(newsService.getArticlesByCategory(category)).thenReturn(articles);
-        when(newsService.getTopArticles()).thenReturn(articles);
+        when(articleRepository.findByCategoryAndStatus(category, ArticleStatus.PUBLISHED)).thenReturn(articles);
+        when(newsService.getFeaturedArticles()).thenReturn(articles);
 
         // Act & Assert
         mockMvc.perform(get("/category/{category}", category))
@@ -157,8 +163,8 @@ public class NewsControllerTest {
         Article article = createSampleArticle(articleId, "Public Article", "deportes");
         
         // Explicitly configure all required mocks
-        when(newsService.getArticleById(eq(articleId))).thenReturn(article);
-        doNothing().when(newsService).incrementViews(eq(articleId));
+        when(articleRepository.findById(eq(articleId))).thenReturn(Optional.of(article));
+        doNothing().when(newsService).incrementViewCount(eq(articleId));
         doNothing().when(visitorStatsService).recordVisit(any(), anyString());
 
         // Act & Assert
@@ -171,8 +177,8 @@ public class NewsControllerTest {
                .andExpect(model().attribute("article", hasProperty("category", equalTo("deportes"))));
 
         // Verify all service interactions
-        verify(newsService, times(1)).getArticleById(articleId);
-        verify(newsService, times(1)).incrementViews(articleId);
+        verify(articleRepository, times(1)).findById(articleId);
+        verify(newsService, times(1)).incrementViewCount(articleId);
         verify(visitorStatsService, times(1)).recordVisit(any(), eq("news/" + articleId));
     }
 }

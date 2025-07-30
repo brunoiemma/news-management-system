@@ -16,6 +16,12 @@
                     <li class="nav-item">
                         <a class="nav-link" href="/admin/articles">Gestionar Artículos</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/users">Gestionar Usuarios</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/roles">Gestionar Roles</a>
+                    </li>
                 </ul>
                 <div class="navbar-nav">
                     <form th:action="@{/logout}" method="post" class="d-inline">
@@ -33,6 +39,26 @@
                     <div class="card-body">
                         <h5 class="card-title">Estadísticas</h5>
                         <p class="card-text">Total de visitas: <span th:text="${totalVisits}">0</span></p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Gestión de Usuarios</h5>
+                        <div class="d-grid gap-2">
+                            <a href="/admin/users" class="btn btn-primary">Ver Usuarios</a>
+                            <a href="/admin/users/create" class="btn btn-success">Crear Usuario</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Gestión de Roles</h5>
+                        <div class="d-grid gap-2">
+                            <a href="/admin/roles" class="btn btn-primary">Ver Roles</a>
+                            <a href="/admin/roles/help" class="btn btn-info">Ayuda de Roles</a>
+                        </div>
                     </div>
                 </div>
             </div>

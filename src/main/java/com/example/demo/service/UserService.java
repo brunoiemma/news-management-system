@@ -1,152 +1,113 @@
 package com.example.demo.service;
 
 import com.example.demo.model.User;
-import com.example.demo.model.Role;
 import com.example.demo.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.Set;
+import java.util.HashSet;
 
 @Service
+@Transactional
 public class UserService implements UserDetailsService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public UserService(UserRepository userRepository, 
-                      PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        System.out.println("==================== LOGIN ATTEMPT ====================");
-        System.out.println("DEBUG: Attempting to load user: " + username);
-        
-        User user = userRepository.findByUsername(username)
-            .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
-
-        System.out.println("DEBUG: Found user in database:");
-        System.out.println("DEBUG: ID: " + user.getId());
-        System.out.println("DEBUG: Username: " + user.getUsername());
-        System.out.println("DEBUG: Password hash length: " + (user.getPassword() != null ? user.getPassword().length() : "null"));
-        System.out.println("DEBUG: Raw role value: " + user.getRole().name());
-        System.out.println("DEBUG: Active status: " + user.isActive());
-
-        if (!user.isActive()) {
-            System.out.println("DEBUG: User is not active, throwing exception");
-            throw new UsernameNotFoundException("User is not active: " + username);
-        }
-
-        Role userRole = user.getRole();
-        if (userRole == null) {
-            System.out.println("DEBUG: No role found for user");
-            throw new UsernameNotFoundException("No role assigned to user: " + username);
-        }
-
-        System.out.println("DEBUG: Raw password from database: [" + user.getPassword() + "]");
-        System.out.println("DEBUG: Password length: " + user.getPassword().length());
-        System.out.println("DEBUG: Password characters:");
-        for (char c : user.getPassword().toCharArray()) {
-            System.out.println("  " + c + " (" + (int)c + ")");
-        }
-
-        System.out.println("DEBUG: Processed role: " + userRole.name().substring(5)); // Remove ROLE_ prefix
-
-        // Create authorities from role and permissions
-        List<SimpleGrantedAuthority> authorities = user.getPermissions().stream()
-            .map(permission -> new SimpleGrantedAuthority("PERMISSION_" + permission))
-            .collect(Collectors.toList());
-        
-        // Add role as an authority
-        authorities.add(new SimpleGrantedAuthority(userRole.name()));
-            
-        UserDetails userDetails = org.springframework.security.core.userdetails.User
-            .withUsername(username)
-            .password(user.getPassword())
-            .authorities(authorities)
-            .build();
-            
-        System.out.println("DEBUG: Created UserDetails with:");
-        System.out.println("  Username: " + userDetails.getUsername());
-        System.out.println("  Password: [" + userDetails.getPassword() + "]");
-        System.out.println("  Authorities: " + userDetails.getAuthorities());
-        System.out.println("====================================================");
-            
-        return userDetails;
+    // User statistics methods
+    public long countAllUsers() {
+        return userRepository.count();
     }
 
-    @Transactional(readOnly = true)
+    public long countActiveUsers() {
+        return userRepository.countByActiveTrue();
+    }
+
+    public long countUsersByRole(String role) {
+        return userRepository.countByRole(role);
+    }
+
+    // User CRUD operations
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
 
-    @Transactional(readOnly = true)
     public Optional<User> getUserById(Long id) {
         return userRepository.findById(id);
     }
 
-    @Transactional(readOnly = true)
     public Optional<User> getUserByUsername(String username) {
         return userRepository.findByUsername(username);
     }
 
-    @Transactional
     public User createUser(User user) {
         // Encode password before saving
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         return userRepository.save(user);
     }
 
-    @Transactional
-    public User updateUser(Long id, User userDetails) {
-        return userRepository.findById(id).map(user -> {
-            user.setEmail(userDetails.getEmail());
-            user.setFirstName(userDetails.getFirstName());
-            user.setLastName(userDetails.getLastName());
-            
-            // Update role if provided
-            if (userDetails.getRole() != null) {
-                user.setRole(userDetails.getRole());
+    public User updateUser(Long id, User user) {
+        return userRepository.findById(id).map(existingUser -> {
+            existingUser.setUsername(user.getUsername());
+            existingUser.setEmail(user.getEmail());
+            existingUser.setFirstName(user.getFirstName());
+            existingUser.setLastName(user.getLastName());
+            existingUser.setRole(user.getRole());
+            existingUser.setActive(user.isActive());
+            // Only update password if it's provided and not already encoded
+            if (user.getPassword() != null && !user.getPassword().startsWith("$2a$")) {
+                existingUser.setPassword(passwordEncoder.encode(user.getPassword()));
             }
-            
-            user.setActive(userDetails.isActive());
-            
-            // Update permissions if provided
-            if (userDetails.getPermissions() != null) {
-                user.setPermissions(userDetails.getPermissions());
-            }
-            
-            // Only update password if it's provided
-            if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
-                user.setPassword(passwordEncoder.encode(userDetails.getPassword()));
-            }
-            
-            return userRepository.save(user);
-        }).orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+            return userRepository.save(existingUser);
+        }).orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 
-    @Transactional
     public void deleteUser(Long id) {
+        userRepository.deleteById(id);
+    }
+
+    // User status management
+    public void activateUser(Long id) {
+        userRepository.findById(id).ifPresent(user -> {
+            user.setActive(true);
+            userRepository.save(user);
+        });
+    }
+
+    public void deactivateUser(Long id) {
         userRepository.findById(id).ifPresent(user -> {
             user.setActive(false);
             userRepository.save(user);
         });
     }
 
-    @Transactional
+    // Role management
+    public List<User> getUsersByRole(String role) {
+        return userRepository.findByRole(role);
+    }
+
+    public void updateUserRole(Long id, String newRole) {
+        userRepository.findById(id).ifPresent(user -> {
+            user.setRole(newRole);
+            userRepository.save(user);
+        });
+    }
+
+    // Password management
     public boolean changePassword(Long id, String oldPassword, String newPassword) {
         return userRepository.findById(id).map(user -> {
             if (passwordEncoder.matches(oldPassword, user.getPassword())) {
@@ -158,34 +119,32 @@ public class UserService implements UserDetailsService {
         }).orElse(false);
     }
 
-    @Transactional(readOnly = true)
-    public boolean hasPermission(User user, String permission) {
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        User user = userRepository.findByUsername(username)
+            .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
         if (!user.isActive()) {
-            return false;
+            throw new UsernameNotFoundException("User is inactive");
         }
 
-        // Admin role has all permissions
-        if (user.getRole() == Role.ROLE_ADMIN) {
-            return true;
-        }
-
-        // Check user's explicit permissions
-        return user.getPermissions().contains(permission);
+        Set<String> authorities = new HashSet<>();
+        // Add role as authority
+        authorities.add(user.getRole());
+        // Add permissions as authorities
+        user.getPermissions().forEach(permission -> 
+            authorities.add("PERMISSION_" + permission));
+        
+        return org.springframework.security.core.userdetails.User.builder()
+            .username(user.getUsername())
+            .password(user.getPassword())
+            .authorities(authorities.toArray(new String[0]))
+            .build();
     }
 
-    @Transactional
-    public void addPermission(Long userId, String permission) {
-        userRepository.findById(userId).ifPresent(user -> {
-            user.addPermission(permission);
-            userRepository.save(user);
-        });
-    }
-
-    @Transactional
-    public void removePermission(Long userId, String permission) {
-        userRepository.findById(userId).ifPresent(user -> {
-            user.removePermission(permission);
-            userRepository.save(user);
-        });
+    public boolean validatePassword(String username, String password) {
+        Optional<User> user = userRepository.findByUsername(username);
+        return user.map(u -> passwordEncoder.matches(password, u.getPassword()))
+                  .orElse(false);
     }
 }

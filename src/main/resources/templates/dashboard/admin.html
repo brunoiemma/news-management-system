@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <title>Admin Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+</head>
+<body>
+    <header>
+        <h1>Admin Dashboard</h1>
+        <div class="user-info">
+            <span th:text="${#authentication.name}" class="font-weight-bold">Username</span>
+            <span class="badge badge-primary">Administrator</span>
+            <form th:action="@{/logout}" method="post" style="display: inline;">
+                <button type="submit" class="button button-secondary">Logout</button>
+            </form>
+        </div>
+    </header>
+
+    <nav>
+        <ul>
+            <!-- User Management -->
+            <li sec:authorize="hasAuthority('MANAGE_USERS')">
+                <h3>User Management</h3>
+                <ul>
+                    <li><a th:href="@{/users}">View All Users</a></li>
+                    <li><a th:href="@{/users/create}">Create New User</a></li>
+                    <li><a th:href="@{/users/roles}">Manage Roles</a></li>
+                    <li><a th:href="@{/users/permissions}">Manage Permissions</a></li>
+                </ul>
+            </li>
+
+            <!-- Content Management -->
+            <li>
+                <h3>Content Management</h3>
+                <ul>
+                    <li sec:authorize="hasAuthority('VIEW_ARTICLE')">
+                        <a th:href="@{/articles}">View All Articles</a>
+                    </li>
+                    <li sec:authorize="hasAuthority('CREATE_ARTICLE')">
+                        <a th:href="@{/articles/create}">Create New Article</a>
+                    </li>
+                    <li sec:authorize="hasAuthority('PUBLISH_ARTICLE')">
+                        <a th:href="@{/articles/pending}">Review Pending Articles</a>
+                    </li>
+                    <li><a th:href="@{/categories}">Manage Categories</a></li>
+                </ul>
+            </li>
+
+            <!-- System Management -->
+            <li>
+                <h3>System Management</h3>
+                <ul>
+                    <li><a th:href="@{/admin/settings}">System Settings</a></li>
+                    <li><a th:href="@{/admin/logs}">View Logs</a></li>
+                    <li><a th:href="@{/admin/backup}">Backup/Restore</a></li>
+                </ul>
+            </li>
+        </ul>
+    </nav>
+
+    <main>
+        <!-- System Overview -->
+        <section class="stats">
+            <h2>System Overview</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Total Users</h3>
+                    <p th:text="${userCount ?: 0}" class="text-primary">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Active Users</h3>
+                    <p th:text="${activeUsers ?: 0}" class="text-success">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Articles</h3>
+                    <p th:text="${articleCount ?: 0}" class="text-info">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Pending Articles</h3>
+                    <p th:text="${pendingArticles ?: 0}" class="text-warning">0</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recent Activity -->
+        <section class="recent-activity">
+            <h2>Recent Activity</h2>
+            <div class="activity-list">
+                <div th:if="${recentActivities}" th:each="activity : ${recentActivities}" class="activity-item">
+                    <p th:text="${activity}" class="mb-2">Activity description</p>
+                </div>
+                <div th:unless="${recentActivities}" class="alert alert-info">
+                    <p>No recent activity to display</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Quick Actions -->
+        <section class="quick-actions">
+            <h2>Quick Actions</h2>
+            <div class="action-grid">
+                <a th:href="@{/users/create}" class="action-card">
+                    <h3>Create User</h3>
+                    <p>Add a new user to the system</p>
+                </a>
+                <a th:href="@{/articles/create}" class="action-card">
+                    <h3>Create Article</h3>
+                    <p>Write a new article</p>
+                </a>
+                <a th:href="@{/articles/pending}" class="action-card">
+                    <h3>Review Articles</h3>
+                    <p>Review pending articles</p>
+                </a>
+                <a th:href="@{/admin/settings}" class="action-card">
+                    <h3>Settings</h3>
+                    <p>Manage system settings</p>
+                </a>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>Admin Dashboard - News Management System</p>
+        <p class="text-muted">Version 1.0.0</p>
+    </footer>
+</body>
+</html>

@@ -2,8 +2,14 @@ package com.example.demo.controller;
 
 import com.example.demo.model.Article;
 import com.example.demo.model.ArticleStatus;
+import com.example.demo.repository.ArticleRepository;
 import com.example.demo.service.NewsService;
+import com.example.demo.service.ResourceNotFoundException;
+import com.example.demo.service.UserService;
 import com.example.demo.service.VisitorStatsService;
+
+import java.util.List;
+import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -19,10 +25,25 @@ public class AdminController {
     @Autowired
     private VisitorStatsService visitorStatsService;
 
+    @Autowired
+    private ArticleRepository articleRepository;
+
+    @Autowired
+    private UserService userService;
+
     @GetMapping({"", "/", "/dashboard"})
     public String adminDashboard(Model model) {
+        // Add visitor statistics
         model.addAttribute("totalVisits", visitorStatsService.getTotalVisits());
-        model.addAttribute("totalArticles", newsService.getTotalArticles());
+        
+        // Add user statistics
+        model.addAttribute("userCount", userService.countAllUsers());
+        model.addAttribute("activeUsers", userService.countActiveUsers());
+        
+        // Add article statistics
+        model.addAttribute("totalArticles", newsService.countAllArticles());
+        model.addAttribute("pendingArticles", newsService.countPendingArticles());
+        
         return "admin/dashboard";
     }
 
@@ -34,7 +55,9 @@ public class AdminController {
     @PostMapping("/fetch-news")
     public String fetchNews(@RequestParam String url, Model model) {
         try {
-            newsService.scrapeAndCreateArticle(url);
+            Article article = new Article();
+            article.setSourceUrl(url);
+            newsService.createArticle(article);
             return "redirect:/admin/articles";
         } catch (Exception e) {
             model.addAttribute("error", "Error fetching article: " + e.getMessage());
@@ -46,7 +69,10 @@ public class AdminController {
     public String listArticles(Model model, @RequestParam(required = false) String status) {
         ArticleStatus statusEnum = status != null && !status.isEmpty() ? 
             ArticleStatus.valueOf(status.toUpperCase()) : null;
-        model.addAttribute("articles", newsService.getAllArticles(statusEnum));
+        List<Article> articles = statusEnum != null ? 
+            articleRepository.findByStatus(statusEnum) : 
+            articleRepository.findAll();
+        model.addAttribute("articles", articles);
         model.addAttribute("statuses", ArticleStatus.values());
         model.addAttribute("selectedStatus", status);
         return "admin/articles";
@@ -68,17 +94,18 @@ public class AdminController {
 
     @GetMapping("/articles/edit/{id}")
     public String editArticleForm(@PathVariable Long id, Model model) {
-        Article article = newsService.getArticleById(id);
-        if (article == null) {
+        Optional<Article> article = articleRepository.findById(id);
+        if (article.isEmpty()) {
             return "redirect:/admin/articles";
         }
-        model.addAttribute("article", article);
+        model.addAttribute("article", article.get());
         return "admin/edit-article";
     }
 
     @PostMapping("/articles/edit/{id}")
     public String updateArticle(@PathVariable Long id, @ModelAttribute Article article) {
-        newsService.updateArticle(id, article);
+        article.setId(id); // Ensure the ID is set
+        newsService.updateArticle(article);
         return "redirect:/admin/articles";
     }
 }

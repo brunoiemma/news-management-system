@@ -8,88 +8,81 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.servlet.util.matcher.MvcRequestMatcher;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity(
-    securedEnabled = true,
-    jsr250Enabled = true,
-    prePostEnabled = true
-)
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, HandlerMappingIntrospector introspector) throws Exception {
-        MvcRequestMatcher.Builder mvcMatcherBuilder = new MvcRequestMatcher.Builder(introspector);
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, org.springframework.web.servlet.handler.HandlerMappingIntrospector introspector) throws Exception {
+        org.springframework.security.web.servlet.util.matcher.MvcRequestMatcher.Builder mvcMatcherBuilder = 
+            new org.springframework.security.web.servlet.util.matcher.MvcRequestMatcher.Builder(introspector);
 
         http
-            .csrf((csrf) -> csrf
-                .ignoringRequestMatchers(new AntPathRequestMatcher("/h2-console/**"))
-                .ignoringRequestMatchers(new AntPathRequestMatcher("/admin/**"))) // Disable CSRF for admin endpoints temporarily
-            .headers((headers) -> headers
-                .frameOptions((frame) -> frame.sameOrigin()))
-            .authorizeHttpRequests((requests) -> requests
-                // Public routes
-                .requestMatchers(mvcMatcherBuilder.pattern("/")).permitAll()
-                .requestMatchers(mvcMatcherBuilder.pattern("/home")).permitAll()
-                .requestMatchers(mvcMatcherBuilder.pattern("/login")).permitAll()
+            .authorizeHttpRequests(auth -> auth
+                // Public resources
                 .requestMatchers(mvcMatcherBuilder.pattern("/css/**")).permitAll()
                 .requestMatchers(mvcMatcherBuilder.pattern("/js/**")).permitAll()
                 .requestMatchers(mvcMatcherBuilder.pattern("/images/**")).permitAll()
-                .requestMatchers(mvcMatcherBuilder.pattern("/generateHash")).permitAll()
-                .requestMatchers(new AntPathRequestMatcher("/h2-console/**")).permitAll()
-                
-                // Admin routes - Role Management
-                .requestMatchers(mvcMatcherBuilder.pattern("/admin/roles/**")).hasRole("ADMIN")
-                .requestMatchers(mvcMatcherBuilder.pattern("/admin/users/**")).hasRole("ADMIN")
-                
-                // Admin Dashboard
-                .requestMatchers(mvcMatcherBuilder.pattern("/admin/dashboard"))
-                    .hasAnyAuthority("ROLE_ADMIN", "ROLE_PUBLISHER", "ROLE_REDACTOR")
-                
-                // Article Management
-                .requestMatchers(mvcMatcherBuilder.pattern("/admin/articles/create"))
-                    .hasAnyAuthority("PERMISSION_CREATE_ARTICLE", "ROLE_ADMIN")
-                .requestMatchers(mvcMatcherBuilder.pattern("/admin/articles/edit/**"))
-                    .hasAnyAuthority("PERMISSION_EDIT_ARTICLE", "ROLE_ADMIN")
-                .requestMatchers(mvcMatcherBuilder.pattern("/admin/articles/delete/**"))
-                    .hasAnyAuthority("PERMISSION_DELETE_ARTICLE", "ROLE_ADMIN")
-                .requestMatchers(mvcMatcherBuilder.pattern("/admin/articles/publish/**"))
-                    .hasAnyAuthority("PERMISSION_PUBLISH_ARTICLE", "ROLE_ADMIN")
-                .requestMatchers(mvcMatcherBuilder.pattern("/admin/articles"))
-                    .hasAnyAuthority("PERMISSION_VIEW_ARTICLE", "ROLE_ADMIN")
-                
-                // Public article access
-                .requestMatchers(mvcMatcherBuilder.pattern("/articles/**"))
-                    .hasAnyAuthority("PERMISSION_VIEW_ARTICLE")
-                
+                .requestMatchers(mvcMatcherBuilder.pattern("/favicon.ico")).permitAll()
+                .requestMatchers(mvcMatcherBuilder.pattern("/")).permitAll()
+                .requestMatchers(mvcMatcherBuilder.pattern("/home")).permitAll()
+                .requestMatchers(mvcMatcherBuilder.pattern("/articles")).permitAll()
+                .requestMatchers(mvcMatcherBuilder.pattern("/articles/view/**")).permitAll()
+                .requestMatchers(mvcMatcherBuilder.pattern("/register")).permitAll()
+                .requestMatchers(mvcMatcherBuilder.pattern("/login")).permitAll()
+                .requestMatchers(mvcMatcherBuilder.pattern("/error")).permitAll()
+                .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/h2-console/**")).permitAll()
+
+                // Admin dashboard and functionalities
+                .requestMatchers(mvcMatcherBuilder.pattern("/admin/**")).hasRole("ADMIN")
+                .requestMatchers(mvcMatcherBuilder.pattern("/users/**")).hasRole("ADMIN")
+                .requestMatchers(mvcMatcherBuilder.pattern("/roles/**")).hasRole("ADMIN")
+
+                // Publisher dashboard and functionalities
+                .requestMatchers(mvcMatcherBuilder.pattern("/publisher/**")).hasRole("PUBLISHER")
+                .requestMatchers(mvcMatcherBuilder.pattern("/articles/publish/**")).hasAuthority("PUBLISH_ARTICLE")
+                .requestMatchers(mvcMatcherBuilder.pattern("/articles/review/**")).hasAuthority("PUBLISH_ARTICLE")
+
+                // Redactor dashboard and functionalities
+                .requestMatchers(mvcMatcherBuilder.pattern("/redactor/**")).hasRole("REDACTOR")
+                .requestMatchers(mvcMatcherBuilder.pattern("/articles/create")).hasAuthority("CREATE_ARTICLE")
+                .requestMatchers(mvcMatcherBuilder.pattern("/articles/edit/**")).hasAuthority("CREATE_ARTICLE")
+
+                // Subscriber dashboard and functionalities
+                .requestMatchers(mvcMatcherBuilder.pattern("/subscriber/**")).hasRole("SUBSCRIBER")
+                .requestMatchers(mvcMatcherBuilder.pattern("/articles/read/**")).hasAuthority("VIEW_ARTICLE")
+
+                // Require authentication for all other requests
                 .anyRequest().authenticated()
             )
-            .formLogin((form) -> form
+            .formLogin(form -> form
                 .loginPage("/login")
-                .defaultSuccessUrl("/admin/dashboard", true)
+                .defaultSuccessUrl("/dashboard", true)
                 .permitAll()
             )
-            .logout((logout) -> logout
+            .logout(logout -> logout
+                .logoutUrl("/logout")
                 .logoutSuccessUrl("/login?logout")
+                .invalidateHttpSession(true)
+                .deleteCookies("JSESSIONID")
                 .permitAll()
-            );
+            )
+            .sessionManagement(session -> session
+                .maximumSessions(1)
+                .expiredUrl("/login?expired")
+            )
+            .csrf(csrf -> csrf
+                .ignoringRequestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/h2-console/**"))
+            )
+            .headers(headers -> headers.frameOptions().disable());
 
         return http.build();
     }
 
-    @Bean 
+    @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
-    }
-
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
-        return authConfig.getAuthenticationManager();
     }
 }

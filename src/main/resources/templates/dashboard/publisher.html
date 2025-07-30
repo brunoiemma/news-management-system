@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <title>Publisher Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+</head>
+<body>
+    <header>
+        <h1>Publisher Dashboard</h1>
+        <div class="user-info">
+            <span th:text="${#authentication.name}" class="font-weight-bold">Username</span>
+            <span class="badge badge-info">Publisher</span>
+            <form th:action="@{/logout}" method="post" style="display: inline;">
+                <button type="submit" class="button button-secondary">Logout</button>
+            </form>
+        </div>
+    </header>
+
+    <nav>
+        <ul>
+            <!-- Article Management -->
+            <li>
+                <h3>Content Management</h3>
+                <ul>
+                    <li sec:authorize="hasAuthority('VIEW_ARTICLE')">
+                        <a th:href="@{/articles}">View All Articles</a>
+                    </li>
+                    <li sec:authorize="hasAuthority('PUBLISH_ARTICLE')">
+                        <a th:href="@{/articles/pending}">Review & Publish Articles</a>
+                    </li>
+                    <li sec:authorize="hasAuthority('REVIEW_ARTICLE')">
+                        <a th:href="@{/articles/review}">Articles Under Review</a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- Team Management -->
+            <li sec:authorize="hasAuthority('VIEW_USERS')">
+                <h3>Team Management</h3>
+                <ul>
+                    <li><a th:href="@{/team/redactors}">View Redactors</a></li>
+                    <li><a th:href="@{/team/performance}">Team Performance</a></li>
+                </ul>
+            </li>
+
+            <!-- Reports -->
+            <li>
+                <h3>Reports</h3>
+                <ul>
+                    <li><a th:href="@{/reports/publishing}">Publishing Statistics</a></li>
+                    <li><a th:href="@{/reports/engagement}">Reader Engagement</a></li>
+                </ul>
+            </li>
+        </ul>
+    </nav>
+
+    <main>
+        <!-- Publishing Statistics -->
+        <section class="stats">
+            <h2>Publishing Overview</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Pending Review</h3>
+                    <p th:text="${pendingReview ?: 0}" class="text-warning">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Published Today</h3>
+                    <p th:text="${publishedToday ?: 0}" class="text-success">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Published</h3>
+                    <p th:text="${totalPublished ?: 0}" class="text-primary">0</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Articles Pending Review -->
+        <section class="pending-articles">
+            <h2>Articles Pending Review</h2>
+            <div class="article-grid">
+                <div th:if="${pendingArticles}" th:each="article : ${pendingArticles}" class="article-card">
+                    <h3 th:text="${article.title}">Article Title</h3>
+                    <p class="text-muted" th:text="${article.author ?: 'Unknown'}">Author</p>
+                    <p class="text-muted" th:text="${article.submissionDate != null ? #temporals.format(article.submissionDate, 'yyyy-MM-dd HH:mm') : 'Not submitted'}">Submission Date</p>
+                    <div class="article-actions">
+                        <a th:href="@{/articles/review/{id}(id=${article.id})}" class="button">Review</a>
+                        <a th:href="@{/articles/publish/{id}(id=${article.id})}" class="button button-success">Publish</a>
+                        <a th:href="@{/articles/reject/{id}(id=${article.id})}" class="button button-danger">Reject</a>
+                    </div>
+                </div>
+                <div th:unless="${pendingArticles}" class="alert alert-info">
+                    <p>No articles pending review</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recent Publications -->
+        <section class="recent-publications">
+            <h2>Recent Publications</h2>
+            <div class="article-grid">
+                <div th:if="${recentPublications}" th:each="article : ${recentPublications}" class="article-card">
+                    <h3 th:text="${article.title}">Article Title</h3>
+                    <p class="text-muted" th:text="${article.author ?: 'Unknown'}">Author</p>
+                    <p class="text-muted" th:text="${article.publishDate != null ? #temporals.format(article.publishDate, 'yyyy-MM-dd HH:mm') : 'Not published'}">Publish Date</p>
+                    <p class="badge badge-info" th:text="${'Views: ' + article.viewCount}">Views: 0</p>
+                    <div class="article-actions">
+                        <a th:href="@{/articles/{id}(id=${article.id})}" class="button">View</a>
+                        <a th:href="@{/articles/stats/{id}(id=${article.id})}" class="button button-secondary">Stats</a>
+                    </div>
+                </div>
+                <div th:unless="${recentPublications}" class="alert alert-info">
+                    <p>No recent publications</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>Publisher Dashboard - News Management System</p>
+        <p class="text-muted">Version 1.0.0</p>
+    </footer>
+</body>
+</html>
