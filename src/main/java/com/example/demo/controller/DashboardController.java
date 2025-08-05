@@ -1,7 +1,6 @@
 package com.example.demo.controller;
 
 import com.example.demo.service.NewsService;
-import com.example.demo.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -14,9 +13,6 @@ public class DashboardController {
 
     @Autowired
     private NewsService newsService;
-
-    @Autowired
-    private UserService userService;
 
     @GetMapping("/dashboard")
     public String getDashboard(Authentication authentication, Model model) {
@@ -36,7 +32,7 @@ public class DashboardController {
     @GetMapping("/publisher/dashboard")
     public String getPublisherDashboard(Model model) {
         // Add statistics for publisher dashboard
-        model.addAttribute("pendingReview", newsService.countPendingReview());
+        model.addAttribute("pendingReview", newsService.countPendingArticles());
         model.addAttribute("publishedToday", newsService.countPublishedToday());
         model.addAttribute("totalPublished", newsService.countTotalPublished());
         model.addAttribute("pendingArticles", newsService.getPendingArticles());

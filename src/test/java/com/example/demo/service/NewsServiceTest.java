@@ -3,20 +3,15 @@ package com.example.demo.service;
 import com.example.demo.model.Article;
 import com.example.demo.model.ArticleStatus;
 import com.example.demo.repository.ArticleRepository;
-import com.example.demo.util.WebScraper;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -126,7 +121,6 @@ public class NewsServiceTest {
     @Test
     void updateArticle_ShouldUpdateAllFields() {
         // Arrange
-        Article existingArticle = createSampleArticle(1L, "Old Title", "deportes", ArticleStatus.DRAFT);
         Article updatedArticle = createSampleArticle(1L, "New Title", "tecnologia", ArticleStatus.PUBLISHED);
         updatedArticle.setContent("Updated content");
         updatedArticle.setImageUrl("new-image.jpg");

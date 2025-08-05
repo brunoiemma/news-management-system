@@ -1,6 +1,5 @@
 package com.example.demo.controller;
 
-import com.example.demo.config.TestConfig;
 import com.example.demo.config.TestSecurityConfig;
 import com.example.demo.model.Article;
 import com.example.demo.model.ArticleStatus;

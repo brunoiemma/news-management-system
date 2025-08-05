@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -27,10 +28,6 @@ public class NewsService {
     }
 
     public long countPendingArticles() {
-        return articleRepository.countByStatus(ArticleStatus.IN_REVIEW);
-    }
-
-    public long countPendingReview() {
         return articleRepository.countByStatus(ArticleStatus.IN_REVIEW);
     }
 
@@ -122,7 +119,7 @@ public class NewsService {
                 article.setContent(scrapedData.get("content"));
                 article.setImageUrl(scrapedData.get("imageUrl"));
                 article.setCategory(scrapedData.get("category"));
-                article.setSource(new java.net.URL(article.getSourceUrl()).getHost());
+                article.setSource(new URI(article.getSourceUrl()).getHost());
             } catch (IOException e) {
                 throw new RuntimeException("Error al acceder a la URL: " + e.getMessage(), e);
             } catch (Exception e) {
