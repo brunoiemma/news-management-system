@@ -3,10 +3,12 @@ package com.example.demo.service;
 import com.example.demo.model.Article;
 import com.example.demo.model.ArticleStatus;
 import com.example.demo.repository.ArticleRepository;
+import com.example.demo.util.WebScraper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -107,6 +109,28 @@ public class NewsService {
 
     // Article management methods
     public Article createArticle(Article article) {
+        if (article.getSourceUrl() != null && !article.getSourceUrl().isEmpty()) {
+            try {
+                Map<String, String> scrapedData = WebScraper.scrapeArticle(article.getSourceUrl());
+                if (scrapedData.get("title") == null || scrapedData.get("title").isEmpty()) {
+                    throw new RuntimeException("No se pudo extraer el título del artículo");
+                }
+                if (scrapedData.get("content") == null || scrapedData.get("content").isEmpty()) {
+                    throw new RuntimeException("No se pudo extraer el contenido del artículo");
+                }
+                article.setTitle(scrapedData.get("title"));
+                article.setContent(scrapedData.get("content"));
+                article.setImageUrl(scrapedData.get("imageUrl"));
+                article.setCategory(scrapedData.get("category"));
+                article.setSource(new java.net.URL(article.getSourceUrl()).getHost());
+            } catch (IOException e) {
+                throw new RuntimeException("Error al acceder a la URL: " + e.getMessage(), e);
+            } catch (Exception e) {
+                throw new RuntimeException("Error al procesar el artículo: " + e.getMessage(), e);
+            }
+        } else {
+            throw new RuntimeException("La URL del artículo es requerida");
+        }
         article.setStatus(ArticleStatus.DRAFT);
         return articleRepository.save(article);
     }

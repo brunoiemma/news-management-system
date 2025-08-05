@@ -16,11 +16,9 @@ public class Article {
     @Column(columnDefinition = "TEXT")
     private String content;
 
-    @Column(nullable = false)
-    private String author;
+    private String author = "admin";
 
-    @Column(nullable = false)
-    private String category;
+    private String category = "General";
 
     @Column(name = "image_url")
     private String imageUrl;

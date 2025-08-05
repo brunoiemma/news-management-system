@@ -5,10 +5,23 @@ DELETE FROM users;
 
 -- Insert users with different roles (password: admin for all)
 INSERT INTO users (username, password, email, first_name, last_name, role, active, created_at, updated_at) VALUES 
+('Sistema', '$2a$10$7hFLSnApv7CZ66QWpw5bluNiH38N2.qTpCTI7Zuc.A1vbG3EXVBCK', 'sistema@example.com', 'Sistema', 'Automatico', 'ROLE_SYSTEM', true, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()),
 ('admin', '$2a$10$7hFLSnApv7CZ66QWpw5bluNiH38N2.qTpCTI7Zuc.A1vbG3EXVBCK', 'admin@example.com', 'Admin', 'User', 'ROLE_ADMIN', true, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()),
 ('publisher', '$2a$10$7hFLSnApv7CZ66QWpw5bluNiH38N2.qTpCTI7Zuc.A1vbG3EXVBCK', 'publisher@example.com', 'Publisher', 'User', 'ROLE_PUBLISHER', true, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()),
 ('redactor', '$2a$10$7hFLSnApv7CZ66QWpw5bluNiH38N2.qTpCTI7Zuc.A1vbG3EXVBCK', 'redactor@example.com', 'Redactor', 'User', 'ROLE_REDACTOR', true, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()),
 ('subscriber', '$2a$10$7hFLSnApv7CZ66QWpw5bluNiH38N2.qTpCTI7Zuc.A1vbG3EXVBCK', 'subscriber@example.com', 'Subscriber', 'User', 'ROLE_SUBSCRIBER', true, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
+
+-- Add permissions for Sistema
+INSERT INTO user_permissions (user_id, permission) 
+SELECT u.id, permission
+FROM users u,
+     (VALUES 
+        ('VIEW_ARTICLE'),
+        ('CREATE_ARTICLE'),
+        ('EDIT_ARTICLE'),
+        ('PUBLISH_ARTICLE')
+     ) AS p(permission)
+WHERE u.username = 'Sistema';
 
 -- Add permissions for admin
 INSERT INTO user_permissions (user_id, permission) 

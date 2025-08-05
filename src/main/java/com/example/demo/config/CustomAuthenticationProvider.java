@@ -29,23 +29,13 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         String username = authentication.getName();
         String password = authentication.getCredentials().toString();
         
-        System.out.println("DEBUG: CustomAuthenticationProvider - Attempting authentication for user: " + username);
-        System.out.println("DEBUG: CustomAuthenticationProvider - Raw password received: [" + password + "]");
-        
         UserDetails user = userService.loadUserByUsername(username);
-        
-        System.out.println("DEBUG: CustomAuthenticationProvider - Stored password hash: [" + user.getPassword() + "]");
-        System.out.println("DEBUG: CustomAuthenticationProvider - About to compare passwords...");
-        
         boolean matches = passwordEncoder.matches(password, user.getPassword());
-        System.out.println("DEBUG: Password match result: " + matches);
         
         if (matches) {
-            System.out.println("DEBUG: CustomAuthenticationProvider - Password match successful!");
             return new UsernamePasswordAuthenticationToken(user, password, user.getAuthorities());
         }
         
-        System.out.println("DEBUG: CustomAuthenticationProvider - Password match failed!");
         throw new BadCredentialsException("Invalid username or password");
     }
 
